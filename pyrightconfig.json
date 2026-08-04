@@ -1,0 +1,13 @@
+{
+  "venvPath": "backend",
+  "venv": ".venv",
+  "pythonVersion": "3.12",
+  "pythonPlatform": "Windows",
+  "executionEnvironments": [
+    {
+      "root": "backend",
+      "extraPaths": ["backend/src"],
+      "pythonVersion": "3.12"
+    }
+  ]
+}
