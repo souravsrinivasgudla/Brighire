@@ -1,20 +1,18 @@
 # Python
 __pycache__/
-*.pyc
+*.py[cod]
 .venv/
-venv/
-
-# Node
-node_modules/
 
 # Environment
 .env
 
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Ruff
+.ruff_cache/
+
 # VS Code
 .vscode/
-
-# macOS
-.DS_Store
-
-# Logs
-*.log

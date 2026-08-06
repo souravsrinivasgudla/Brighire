@@ -1,12 +1,5 @@
-from fastapi import FastAPI
+"""Application entry point."""
 
-app = FastAPI()
+from app.core.application import create_application
 
-
-@app.get("/")
-def root():
-    return {
-        "application": "Brighire",
-        "version": "0.1.0",
-        "status": "running"
-    }
+app = create_application()
