@@ -1,0 +1,10 @@
+"""Test PostgreSQL connectivity."""
+
+from sqlalchemy import text
+
+from app.core.database import engine
+
+
+with engine.connect() as connection:
+    result = connection.execute(text("SELECT 1"))
+    print(f"Database connection successful: {result.scalar()}")
