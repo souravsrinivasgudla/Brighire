@@ -5,10 +5,13 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.auth.dependencies import get_current_user
 from app.core.database import get_db
+from app.users.models import User
 from app.users.repository import UserRepository
 from app.users.schemas import UserCreate, UserResponse
 from app.users.service import UserService
+
 
 router = APIRouter(
     prefix="/users",
@@ -38,12 +41,25 @@ def create_user(
     """Create a user."""
 
     try:
-        return service.create_user(data)
+        user = service.create_user(data)
+        return UserResponse.model_validate(user)
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=str(exc),
         ) from exc
+
+
+@router.get(
+    "/me",
+    response_model=UserResponse,
+)
+def get_current_user_profile(
+    current_user: User = Depends(get_current_user),
+) -> UserResponse:
+    """Get the currently authenticated user."""
+
+    return UserResponse.model_validate(current_user)
 
 
 @router.get(
@@ -64,4 +80,6 @@ def get_user(
             detail="User not found.",
         )
 
-    return user
+    return UserResponse.model_validate(user)
+
+

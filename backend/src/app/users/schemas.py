@@ -10,6 +10,7 @@ class UserCreate(BaseModel):
 
     email: EmailStr
     full_name: str
+    password: str
 
 
 class UserResponse(BaseModel):
