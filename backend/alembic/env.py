@@ -15,7 +15,8 @@ if str(SRC_PATH) not in sys.path:
 
 from app.core.config import settings
 from app.core.database import Base
-from app.users.models import User  # noqa: F401
+from app.users.models import User
+from app.resumes.models import Resume
 
 config = context.config
 
