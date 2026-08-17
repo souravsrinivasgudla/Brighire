@@ -17,6 +17,7 @@ from app.core.config import settings
 from app.core.database import Base
 from app.users.models import User
 from app.resumes.models import Resume
+from app.resumes.analysis_model import ResumeAnalysis
 
 config = context.config
 
