@@ -66,3 +66,32 @@ class ResumeAnalysisService:
             missing_skills=analysis.missing_skills,
             suggestions=analysis.suggestions,
         )
+    
+    def get_analysis(
+        self,
+        *,
+        resume_id: UUID,
+        user_id: UUID,
+    ) -> ResumeAnalysis:
+        """Get the saved analysis for a user's resume."""
+
+        resume = self.resume_repository.get_by_id(resume_id)
+
+        if resume is None:
+            raise ValueError("Resume not found.")
+
+        if resume.user_id != user_id:
+            raise PermissionError(
+                "You do not have access to this resume."
+            )
+
+        analysis = self.analysis_repository.get_by_resume_id(
+            resume_id
+        )
+
+        if analysis is None:
+            raise ValueError(
+                "Resume has not been analyzed yet."
+            )
+
+        return analysis

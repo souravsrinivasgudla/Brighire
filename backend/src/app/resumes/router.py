@@ -152,3 +152,39 @@ def analyze_resume(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(exc),
         ) from exc
+
+# ---------------------------------------------------------------------------
+# Get analysis
+# ---------------------------------------------------------------------------
+@router.get(
+    "/{resume_id}/analysis",
+    response_model=ResumeAnalysisResponse,
+)
+def get_resume_analysis(
+    resume_id: UUID,
+    current_user: User = Depends(get_current_user),
+    service: ResumeAnalysisService = Depends(
+        get_resume_analysis_service,
+    ),
+) -> ResumeAnalysisResponse:
+    """Get the saved AI analysis for a resume."""
+
+    try:
+        analysis = service.get_analysis(
+            resume_id=resume_id,
+            user_id=current_user.id,
+        )
+
+        return ResumeAnalysisResponse.model_validate(analysis)
+
+    except PermissionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from exc
+
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
