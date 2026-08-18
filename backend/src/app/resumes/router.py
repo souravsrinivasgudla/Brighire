@@ -24,6 +24,11 @@ from app.resumes.repository import ResumeRepository
 from app.resumes.schemas import ResumeResponse
 from app.resumes.schemas_analysis import ResumeAnalysisResponse
 from app.resumes.service import ResumeService
+from app.shared.exceptions import (
+    ResourceAccessDeniedError,
+    ResourceNotFoundError,
+    ResourceNotReadyError,
+)
 from app.users.models import User
 
 
@@ -141,21 +146,29 @@ def analyze_resume(
 
         return ResumeAnalysisResponse.model_validate(analysis)
 
-    except PermissionError as exc:
+    except ResourceAccessDeniedError as exc:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=str(exc),
         ) from exc
 
-    except ValueError as exc:
+    except ResourceNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(exc),
         ) from exc
 
+    except ResourceNotReadyError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
+
+
 # ---------------------------------------------------------------------------
 # Get analysis
 # ---------------------------------------------------------------------------
+
 @router.get(
     "/{resume_id}/analysis",
     response_model=ResumeAnalysisResponse,
@@ -177,13 +190,19 @@ def get_resume_analysis(
 
         return ResumeAnalysisResponse.model_validate(analysis)
 
-    except PermissionError as exc:
+    except ResourceAccessDeniedError as exc:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=str(exc),
         ) from exc
 
-    except ValueError as exc:
+    except ResourceNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    except ResourceNotReadyError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(exc),

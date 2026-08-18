@@ -7,6 +7,11 @@ from app.ai.service import ResumeAIService
 from app.resumes.analysis_models import ResumeAnalysis
 from app.resumes.analysis_repository import ResumeAnalysisRepository
 from app.resumes.repository import ResumeRepository
+from app.shared.exceptions import (
+    ResourceAccessDeniedError,
+    ResourceNotFoundError,
+    ResourceNotReadyError,
+)
 
 
 class ResumeAnalysisService:
@@ -33,15 +38,15 @@ class ResumeAnalysisService:
         resume = self.resume_repository.get_by_id(resume_id)
 
         if resume is None:
-            raise ValueError("Resume not found.")
+            raise ResourceNotFoundError("Resume not found.")
 
         if resume.user_id != user_id:
-            raise PermissionError(
+            raise ResourceAccessDeniedError(
                 "You do not have access to this resume."
             )
 
         if not resume.extracted_text:
-            raise ValueError(
+            raise ResourceNotReadyError(
                 "Resume contains no extractable text."
             )
 
@@ -78,19 +83,19 @@ class ResumeAnalysisService:
         resume = self.resume_repository.get_by_id(resume_id)
 
         if resume is None:
-            raise ValueError("Resume not found.")
+            raise ResourceNotFoundError("Resume not found.")
 
         if resume.user_id != user_id:
-            raise PermissionError(
-                "You do not have access to this resume."
-            )
+            raise ResourceAccessDeniedError(
+            "You do not have access to this resume."
+        )
 
         analysis = self.analysis_repository.get_by_resume_id(
             resume_id
         )
 
         if analysis is None:
-            raise ValueError(
+            raise ResourceNotReadyError(
                 "Resume has not been analyzed yet."
             )
 
