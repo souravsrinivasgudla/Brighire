@@ -17,3 +17,4 @@ An AI-powered Resume Analyzer and Job Matching Platform built with modern cloud-
 - Grafana
 
 Work in Progress 🚀
+

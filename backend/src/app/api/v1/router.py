@@ -7,6 +7,7 @@ from app.api.root import router as root_router
 from app.users.router import router as users_router
 from app.auth.router import router as auth_router
 from app.resumes.router import router as resumes_router
+from app.jobs.router import router as jobs_router
 
 router = APIRouter()
 
@@ -15,3 +16,4 @@ router.include_router(health_router)
 router.include_router(users_router)
 router.include_router(auth_router)
 router.include_router(resumes_router)
+router.include_router(jobs_router)
