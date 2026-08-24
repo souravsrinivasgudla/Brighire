@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
@@ -58,13 +58,31 @@ def create_job(
     response_model=list[JobResponse],
 )
 def get_jobs(
+    search: str | None = Query(
+        default=None,
+        min_length=1,
+        max_length=100,
+    ),
+    location: str | None = Query(
+        default=None,
+        min_length=1,
+        max_length=255,
+    ),
+    company: str | None = Query(
+        default=None,
+        min_length=1,
+        max_length=255,
+    ),
     current_user: User = Depends(get_current_user),
     service: JobService = Depends(get_job_service),
 ) -> list[JobResponse]:
-    """Get all jobs belonging to the authenticated user."""
+    """Get jobs belonging to the authenticated user."""
 
     jobs = service.get_user_jobs(
         user_id=current_user.id,
+        search=search,
+        location=location,
+        company=company,
     )
 
     return [

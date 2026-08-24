@@ -63,10 +63,18 @@ class JobService:
         self,
         *,
         user_id: UUID,
+        search: str | None = None,
+        location: str | None = None,
+        company: str | None = None,
     ) -> list[Job]:
-        """Get all jobs belonging to the authenticated user."""
+        """Get jobs belonging to a user with optional filters."""
 
-        return self.repository.get_by_user_id(user_id)
+        return self.repository.get_by_user_id(
+            user_id=user_id,
+            search=search,
+            location=location,
+            company=company,
+        )
     
     def update_job(
         self,

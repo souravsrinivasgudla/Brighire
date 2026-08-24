@@ -97,14 +97,42 @@ class JobRepository:
 
     def get_by_user_id(
         self,
+        *,
         user_id: UUID,
+        search: str | None = None,
+        location: str | None = None,
+        company: str | None = None,
     ) -> list[Job]:
-        """Get all jobs belonging to a user."""
+        """Get jobs belonging to a user with optional filters."""
 
-        statement = (
-            select(Job)
-            .where(Job.user_id == user_id)
-            .order_by(Job.created_at.desc())
+        statement = select(Job).where(
+            Job.user_id == user_id,
         )
 
-        return list(self.db.scalars(statement).all())
+        if search:
+            search_pattern = f"%{search}%"
+
+            statement = statement.where(
+                Job.title.ilike(search_pattern)
+                | Job.company.ilike(search_pattern)
+                | Job.description.ilike(search_pattern)
+                | Job.requirements.ilike(search_pattern)
+            )
+
+        if location:
+            statement = statement.where(
+                Job.location.ilike(f"%{location}%")
+            )
+
+        if company:
+            statement = statement.where(
+                Job.company.ilike(f"%{company}%")
+            )
+
+        statement = statement.order_by(
+            Job.created_at.desc()
+        )
+
+        return list(
+            self.db.scalars(statement).all()
+        )
