@@ -56,3 +56,82 @@ class GroqAIClient:
             raise ValueError("AI returned an empty response.")
 
         return json.loads(content)
+
+
+    def analyze_resume_job_match(
+        self,
+        *,
+        resume_text: str,
+        job_title: str,
+        company: str,
+        job_description: str,
+        requirements: str | None,
+    ) -> dict:
+        """Analyze how well a resume matches a job."""
+
+        requirements_text = requirements or "No specific requirements provided."
+
+        prompt = f"""
+    Analyze the following resume against the provided job.
+
+    Return ONLY valid JSON.
+
+    The JSON must contain exactly these fields:
+
+    {{
+    "match_score": integer from 0 to 100,
+    "summary": "string",
+    "matched_skills": ["string"],
+    "missing_skills": ["string"],
+    "strengths": ["string"],
+    "gaps": ["string"],
+    "recommendations": ["string"]
+    }}
+
+    Resume:
+    {resume_text}
+
+    Job Title:
+    {job_title}
+
+    Company:
+    {company}
+
+    Job Description:
+    {job_description}
+
+    Job Requirements:
+    {requirements_text}
+
+    The response must be valid JSON.
+    """
+
+        response = self.client.chat.completions.create(
+            model=settings.groq_model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are an expert recruitment assistant. "
+                        "Analyze resume-to-job compatibility. "
+                        "Always return JSON."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": prompt,
+                },
+            ],
+            response_format={
+                "type": "json_object",
+            },
+        )
+
+        content = response.choices[0].message.content
+
+        if not content:
+            raise ValueError(
+                "AI returned an empty response."
+            )
+
+        return json.loads(content)

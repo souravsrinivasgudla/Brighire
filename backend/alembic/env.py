@@ -19,6 +19,7 @@ from app.users.models import User
 from app.resumes.models import Resume
 from app.resumes.analysis_models import ResumeAnalysis
 from app.jobs.models import Job
+from app.jobs.match_models import ResumeJobMatch
 
 
 config = context.config

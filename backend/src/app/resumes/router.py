@@ -13,6 +13,11 @@ from fastapi import (
 )
 from sqlalchemy.orm import Session
 
+from app.jobs.match_repository import ResumeJobMatchRepository
+from app.jobs.match_schemas import ResumeJobMatchResponse
+from app.jobs.match_service import ResumeJobMatchService
+from app.jobs.repository import JobRepository
+
 from app.ai.client import GroqAIClient
 from app.ai.service import ResumeAIService
 from app.auth.dependencies import get_current_user
@@ -91,6 +96,29 @@ def get_resume_analysis_service(
         ai_service=ai_service,
     )
 
+# ---------------------------------------------------------------------------
+# Resume-job match service dependency
+# ---------------------------------------------------------------------------
+
+def get_resume_match_service(
+    db: Session = Depends(get_db),
+) -> ResumeJobMatchService:
+    """Create the resume-job match service."""
+
+    resume_repository = ResumeRepository(db)
+
+    job_repository = JobRepository(db)
+
+    match_repository = ResumeJobMatchRepository(db)
+
+    ai_client = GroqAIClient()
+
+    return ResumeJobMatchService(
+        resume_repository=resume_repository,
+        job_repository=job_repository,
+        match_repository=match_repository,
+        ai_client=ai_client,
+    )
 
 # ---------------------------------------------------------------------------
 # Upload resume
@@ -203,6 +231,46 @@ def get_resume_analysis(
         ) from exc
 
     except ResourceNotReadyError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+# ---------------------------------------------------------------------------
+# Get resume job matches
+# ---------------------------------------------------------------------------
+
+@router.get(
+    "/{resume_id}/matches",
+    response_model=list[ResumeJobMatchResponse],
+)
+def get_resume_matches(
+    resume_id: UUID,
+    current_user: User = Depends(get_current_user),
+    service: ResumeJobMatchService = Depends(
+        get_resume_match_service,
+    ),
+) -> list[ResumeJobMatchResponse]:
+    """Get all job matches for a resume."""
+
+    try:
+        matches = service.get_resume_matches(
+            resume_id=resume_id,
+            user_id=current_user.id,
+        )
+
+        return [
+            ResumeJobMatchResponse.model_validate(match)
+            for match in matches
+        ]
+
+    except ResourceAccessDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from exc
+
+    except ResourceNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(exc),
