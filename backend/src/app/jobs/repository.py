@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.jobs.models import Job
@@ -102,17 +102,19 @@ class JobRepository:
         search: str | None = None,
         location: str | None = None,
         company: str | None = None,
-    ) -> list[Job]:
-        """Get jobs belonging to a user with optional filters."""
+        offset: int = 0,
+        limit: int = 10,
+    ) -> tuple[list[Job], int]:
+        """Get paginated jobs belonging to a user."""
 
-        statement = select(Job).where(
+        filters = [
             Job.user_id == user_id,
-        )
+        ]
 
         if search:
             search_pattern = f"%{search}%"
 
-            statement = statement.where(
+            filters.append(
                 Job.title.ilike(search_pattern)
                 | Job.company.ilike(search_pattern)
                 | Job.description.ilike(search_pattern)
@@ -120,19 +122,33 @@ class JobRepository:
             )
 
         if location:
-            statement = statement.where(
+            filters.append(
                 Job.location.ilike(f"%{location}%")
             )
 
         if company:
-            statement = statement.where(
+            filters.append(
                 Job.company.ilike(f"%{company}%")
             )
 
-        statement = statement.order_by(
-            Job.created_at.desc()
+        count_statement = (
+            select(func.count())
+            .select_from(Job)
+            .where(*filters)
         )
 
-        return list(
+        total = self.db.scalar(count_statement) or 0
+
+        statement = (
+            select(Job)
+            .where(*filters)
+            .order_by(Job.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+        )
+
+        jobs = list(
             self.db.scalars(statement).all()
         )
+
+        return jobs, total

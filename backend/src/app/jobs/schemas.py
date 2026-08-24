@@ -73,3 +73,13 @@ class JobResponse(BaseModel):
     requirements: str | None
     created_at: datetime
     updated_at: datetime
+
+class JobListResponse(BaseModel):
+    """Paginated job list response."""
+
+    items: list[JobResponse]
+
+    page: int
+    page_size: int
+    total: int
+    pages: int

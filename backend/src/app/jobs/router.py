@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import get_current_user
 from app.core.database import get_db
 from app.jobs.repository import JobRepository
-from app.jobs.schemas import JobCreate, JobResponse, JobUpdate
+from app.jobs.schemas import JobCreate, JobResponse, JobUpdate, JobListResponse
 from app.jobs.service import JobService
 from app.shared.exceptions import (
     ResourceAccessDeniedError,
@@ -55,7 +55,7 @@ def create_job(
 
 @router.get(
     "",
-    response_model=list[JobResponse],
+    response_model=JobListResponse,
 )
 def get_jobs(
     search: str | None = Query(
@@ -73,22 +73,39 @@ def get_jobs(
         min_length=1,
         max_length=255,
     ),
+    page: int = Query(
+        default=1,
+        ge=1,
+    ),
+    page_size: int = Query(
+        default=10,
+        ge=1,
+        le=100,
+    ),
     current_user: User = Depends(get_current_user),
     service: JobService = Depends(get_job_service),
-) -> list[JobResponse]:
-    """Get jobs belonging to the authenticated user."""
+) -> JobListResponse:
+    """Get paginated jobs belonging to the authenticated user."""
 
-    jobs = service.get_user_jobs(
+    jobs, total, pages = service.get_user_jobs(
         user_id=current_user.id,
         search=search,
         location=location,
         company=company,
+        page=page,
+        page_size=page_size,
     )
 
-    return [
-        JobResponse.model_validate(job)
-        for job in jobs
-    ]
+    return JobListResponse(
+        items=[
+            JobResponse.model_validate(job)
+            for job in jobs
+        ],
+        page=page,
+        page_size=page_size,
+        total=total,
+        pages=pages,
+    )
 
 
 @router.get(

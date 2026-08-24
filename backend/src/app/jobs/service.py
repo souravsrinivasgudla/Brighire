@@ -1,5 +1,6 @@
 """Job business logic."""
 
+import math
 from uuid import UUID
 
 from app.jobs.models import Job
@@ -66,15 +67,40 @@ class JobService:
         search: str | None = None,
         location: str | None = None,
         company: str | None = None,
-    ) -> list[Job]:
-        """Get jobs belonging to a user with optional filters."""
+        page: int = 1,
+        page_size: int = 10,
+    ) -> tuple[list[Job], int, int]:
+        """Get paginated jobs belonging to the authenticated user."""
 
-        return self.repository.get_by_user_id(
+        if page < 1:
+            raise ValueError(
+                "Page must be greater than or equal to 1."
+            )
+
+        if page_size < 1:
+            raise ValueError(
+                "Page size must be greater than or equal to 1."
+            )
+
+        if page_size > 100:
+            raise ValueError(
+                "Page size cannot exceed 100."
+            )
+
+        offset = (page - 1) * page_size
+
+        jobs, total = self.repository.get_by_user_id(
             user_id=user_id,
             search=search,
             location=location,
             company=company,
+            offset=offset,
+            limit=page_size,
         )
+
+        pages = math.ceil(total / page_size)
+
+        return jobs, total, pages
     
     def update_job(
         self,
