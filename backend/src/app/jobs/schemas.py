@@ -30,6 +30,32 @@ class JobCreate(BaseModel):
 
     requirements: str | None = None
 
+class JobUpdate(BaseModel):
+    """Schema for updating a job."""
+
+    title: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=255,
+    )
+
+    company: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=255,
+    )
+
+    location: str | None = Field(
+        default=None,
+        max_length=255,
+    )
+
+    description: str | None = Field(
+        default=None,
+        min_length=1,
+    )
+
+    requirements: str | None = None
 
 class JobResponse(BaseModel):
     """Schema returned for a job."""

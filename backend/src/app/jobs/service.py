@@ -4,7 +4,7 @@ from uuid import UUID
 
 from app.jobs.models import Job
 from app.jobs.repository import JobRepository
-from app.jobs.schemas import JobCreate
+from app.jobs.schemas import JobCreate, JobUpdate
 from app.shared.exceptions import (
     ResourceAccessDeniedError,
     ResourceNotFoundError,
@@ -67,3 +67,43 @@ class JobService:
         """Get all jobs belonging to the authenticated user."""
 
         return self.repository.get_by_user_id(user_id)
+    
+    def update_job(
+        self,
+        *,
+        job_id: UUID,
+        user_id: UUID,
+        data: JobUpdate,
+    ) -> Job:
+        """Update a user's job."""
+
+        job = self.get_job(
+            job_id=job_id,
+            user_id=user_id,
+        )
+
+        return self.repository.update(
+            job=job,
+            title=data.title,
+            company=data.company,
+            location=data.location,
+            description=data.description,
+            requirements=data.requirements,
+        )
+
+    def delete_job(
+        self,
+        *,
+        job_id: UUID,
+        user_id: UUID,
+    ) -> None:
+        """Delete a user's job."""
+
+        job = self.get_job(
+            job_id=job_id,
+            user_id=user_id,
+        )
+
+        self.repository.delete(
+            job=job,
+        )

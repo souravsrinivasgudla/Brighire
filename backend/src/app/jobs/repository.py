@@ -41,6 +41,48 @@ class JobRepository:
 
         return job
 
+    def update(
+        self,
+        *,
+        job: Job,
+        title: str | None,
+        company: str | None,
+        location: str | None,
+        description: str | None,
+        requirements: str | None,
+    ) -> Job:
+        """Update a job."""
+
+        if title is not None:
+            job.title = title
+
+        if company is not None:
+            job.company = company
+
+        if location is not None:
+            job.location = location
+
+        if description is not None:
+            job.description = description
+
+        if requirements is not None:
+            job.requirements = requirements
+
+        self.db.commit()
+        self.db.refresh(job)
+
+        return job
+
+    def delete(
+        self,
+        *,
+        job: Job,
+    ) -> None:
+        """Delete a job."""
+
+        self.db.delete(job)
+        self.db.commit()
+
     def get_by_id(
         self,
         job_id: UUID,

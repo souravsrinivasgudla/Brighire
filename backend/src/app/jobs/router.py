@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import get_current_user
 from app.core.database import get_db
 from app.jobs.repository import JobRepository
-from app.jobs.schemas import JobCreate, JobResponse
+from app.jobs.schemas import JobCreate, JobResponse, JobUpdate
 from app.jobs.service import JobService
 from app.shared.exceptions import (
     ResourceAccessDeniedError,
@@ -91,6 +91,68 @@ def get_job(
         )
 
         return JobResponse.model_validate(job)
+
+    except ResourceNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    except ResourceAccessDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from exc
+
+@router.put(
+    "/{job_id}",
+    response_model=JobResponse,
+)
+def update_job(
+    job_id: UUID,
+    data: JobUpdate,
+    current_user: User = Depends(get_current_user),
+    service: JobService = Depends(get_job_service),
+) -> JobResponse:
+    """Update a job owned by the authenticated user."""
+
+    try:
+        job = service.update_job(
+            job_id=job_id,
+            user_id=current_user.id,
+            data=data,
+        )
+
+        return JobResponse.model_validate(job)
+
+    except ResourceNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    except ResourceAccessDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from exc
+
+@router.delete(
+    "/{job_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_job(
+    job_id: UUID,
+    current_user: User = Depends(get_current_user),
+    service: JobService = Depends(get_job_service),
+) -> None:
+    """Delete a job owned by the authenticated user."""
+
+    try:
+        service.delete_job(
+            job_id=job_id,
+            user_id=current_user.id,
+        )
 
     except ResourceNotFoundError as exc:
         raise HTTPException(
