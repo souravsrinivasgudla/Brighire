@@ -129,3 +129,112 @@ class DashboardRepository:
             (match, job)
             for match, job in self.db.execute(statement).all()
         ]
+
+    def get_resume(
+        self,
+        *,
+        resume_id: UUID,
+        user_id: UUID,
+    ) -> Resume | None:
+        """Get a user's resume by ID."""
+
+        statement = (
+            select(Resume)
+            .where(
+                Resume.id == resume_id,
+                Resume.user_id == user_id,
+            )
+        )
+
+        return self.db.scalar(statement)
+
+
+    def get_resume_analysis(
+        self,
+        *,
+        resume_id: UUID,
+    ) -> ResumeAnalysis | None:
+        """Get the analysis for a resume."""
+
+        statement = (
+            select(ResumeAnalysis)
+            .where(
+                ResumeAnalysis.resume_id == resume_id,
+            )
+        )
+
+        return self.db.scalar(statement)
+
+
+    def get_resume_match_count(
+        self,
+        *,
+        resume_id: UUID,
+    ) -> int:
+        """Get the number of matches for a resume."""
+
+        statement = (
+            select(func.count())
+            .select_from(ResumeJobMatch)
+            .where(
+                ResumeJobMatch.resume_id == resume_id,
+            )
+        )
+
+        return self.db.scalar(statement) or 0
+
+
+    def get_resume_average_match_score(
+        self,
+        *,
+        resume_id: UUID,
+    ) -> int | None:
+        """Get the average match score for a resume."""
+
+        statement = (
+            select(func.avg(ResumeJobMatch.match_score))
+            .select_from(ResumeJobMatch)
+            .where(
+                ResumeJobMatch.resume_id == resume_id,
+            )
+        )
+
+        average = self.db.scalar(statement)
+
+        if average is None:
+            return None
+
+        return round(float(average))
+
+
+    def get_resume_top_matches(
+        self,
+        *,
+        resume_id: UUID,
+        limit: int = 5,
+    ) -> list[tuple[ResumeJobMatch, Job]]:
+        """Get the highest-scoring jobs for a resume."""
+
+        statement = (
+            select(
+                ResumeJobMatch,
+                Job,
+            )
+            .join(
+                Job,
+                Job.id == ResumeJobMatch.job_id,
+            )
+            .where(
+                ResumeJobMatch.resume_id == resume_id,
+            )
+            .order_by(
+                ResumeJobMatch.match_score.desc(),
+                ResumeJobMatch.created_at.desc(),
+            )
+            .limit(limit)
+        )
+
+        return [
+            (match, job)
+            for match, job in self.db.execute(statement).all()
+        ]
