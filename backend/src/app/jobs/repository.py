@@ -6,6 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.jobs.models import Job
+from app.jobs.match_models import ResumeJobMatch
 
 
 class JobRepository:
@@ -104,8 +105,10 @@ class JobRepository:
         company: str | None = None,
         offset: int = 0,
         limit: int = 10,
+        sort_by: str = "created_at",
+        resume_id: UUID | None = None,
     ) -> tuple[list[Job], int]:
-        """Get paginated jobs belonging to a user."""
+        """Get paginated jobs with optional filtering and sorting."""
 
         filters = [
             Job.user_id == user_id,
@@ -139,10 +142,46 @@ class JobRepository:
 
         total = self.db.scalar(count_statement) or 0
 
+        statement = select(Job).where(*filters)
+
+        if sort_by == "title":
+            statement = statement.order_by(
+                Job.title.asc(),
+                Job.created_at.desc(),
+            )
+
+        elif sort_by == "company":
+            statement = statement.order_by(
+                Job.company.asc(),
+                Job.created_at.desc(),
+            )
+
+        elif sort_by == "match_score" and resume_id is not None:
+            statement = (
+                statement
+                .outerjoin(
+                    ResumeJobMatch,
+                    (
+                        (ResumeJobMatch.job_id == Job.id)
+                        & (
+                            ResumeJobMatch.resume_id
+                            == resume_id
+                        )
+                    ),
+                )
+                .order_by(
+                    ResumeJobMatch.match_score.desc().nullslast(),
+                    Job.created_at.desc(),
+                )
+            )
+
+        else:
+            statement = statement.order_by(
+                Job.created_at.desc()
+            )
+
         statement = (
-            select(Job)
-            .where(*filters)
-            .order_by(Job.created_at.desc())
+            statement
             .offset(offset)
             .limit(limit)
         )

@@ -9,6 +9,7 @@ from app.auth.dependencies import get_current_user
 from app.core.database import get_db
 from app.jobs.repository import JobRepository
 from app.jobs.schemas import JobCreate, JobResponse, JobUpdate, JobListResponse
+from app.resumes.repository import ResumeRepository
 from app.jobs.service import JobService
 from app.shared.exceptions import (
     ResourceAccessDeniedError,
@@ -29,8 +30,9 @@ def get_job_service(
     """Create a job service."""
 
     repository = JobRepository(db)
+    resume_repository = ResumeRepository(db)
 
-    return JobService(repository)
+    return JobService(repository, resume_repository)
 
 
 @router.post(
@@ -82,30 +84,58 @@ def get_jobs(
         ge=1,
         le=100,
     ),
+    sort_by: str = Query(
+        default="created_at",
+        pattern="^(created_at|title|company|match_score)$",
+    ),
+    resume_id: UUID | None = Query(
+        default=None,
+    ),
     current_user: User = Depends(get_current_user),
     service: JobService = Depends(get_job_service),
 ) -> JobListResponse:
-    """Get paginated jobs belonging to the authenticated user."""
+    """Get paginated jobs with filtering and sorting."""
 
-    jobs, total, pages = service.get_user_jobs(
-        user_id=current_user.id,
-        search=search,
-        location=location,
-        company=company,
-        page=page,
-        page_size=page_size,
-    )
+    try:
+        jobs, total, pages = service.get_user_jobs(
+            user_id=current_user.id,
+            search=search,
+            location=location,
+            company=company,
+            page=page,
+            page_size=page_size,
+            sort_by=sort_by,
+            resume_id=resume_id,
+        )
 
-    return JobListResponse(
-        items=[
-            JobResponse.model_validate(job)
-            for job in jobs
-        ],
-        page=page,
-        page_size=page_size,
-        total=total,
-        pages=pages,
-    )
+        return JobListResponse(
+            items=[
+                JobResponse.model_validate(job)
+                for job in jobs
+            ],
+            page=page,
+            page_size=page_size,
+            total=total,
+            pages=pages,
+        )
+
+    except ResourceAccessDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from exc
+
+    except ResourceNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
 
 
 @router.get(

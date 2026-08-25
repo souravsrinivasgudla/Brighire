@@ -6,6 +6,7 @@ from uuid import UUID
 from app.jobs.models import Job
 from app.jobs.repository import JobRepository
 from app.jobs.schemas import JobCreate, JobUpdate
+from app.resumes.repository import ResumeRepository
 from app.shared.exceptions import (
     ResourceAccessDeniedError,
     ResourceNotFoundError,
@@ -18,8 +19,10 @@ class JobService:
     def __init__(
         self,
         repository: JobRepository,
+        resume_repository: ResumeRepository,
     ) -> None:
         self.repository = repository
+        self.resume_repository = resume_repository
 
     def create_job(
         self,
@@ -69,8 +72,10 @@ class JobService:
         company: str | None = None,
         page: int = 1,
         page_size: int = 10,
+        sort_by: str = "created_at",
+        resume_id: UUID | None = None,
     ) -> tuple[list[Job], int, int]:
-        """Get paginated jobs belonging to the authenticated user."""
+        """Get paginated jobs with optional filtering and sorting."""
 
         if page < 1:
             raise ValueError(
@@ -87,6 +92,39 @@ class JobService:
                 "Page size cannot exceed 100."
             )
 
+        allowed_sort_fields = {
+            "created_at",
+            "title",
+            "company",
+            "match_score",
+        }
+
+        if sort_by not in allowed_sort_fields:
+            raise ValueError(
+                "Invalid sort field. "
+                "Allowed values: created_at, title, company, match_score."
+            )
+
+        if sort_by == "match_score" and resume_id is None:
+            raise ValueError(
+                "resume_id is required when sorting by match_score."
+            )
+
+        if resume_id is not None:
+            resume = self.resume_repository.get_by_id(
+                resume_id
+            )
+
+            if resume is None:
+                raise ResourceNotFoundError(
+                    "Resume not found."
+                )
+
+            if resume.user_id != user_id:
+                raise ResourceAccessDeniedError(
+                    "You do not have access to this resume."
+                )
+
         offset = (page - 1) * page_size
 
         jobs, total = self.repository.get_by_user_id(
@@ -96,6 +134,8 @@ class JobService:
             company=company,
             offset=offset,
             limit=page_size,
+            sort_by=sort_by,
+            resume_id=resume_id,
         )
 
         pages = math.ceil(total / page_size)
