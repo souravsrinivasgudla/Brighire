@@ -14,10 +14,6 @@ class UserService:
     def __init__(self, repository: UserRepository) -> None:
         self.repository = repository
 
-    def get_user(self, user_id: UUID) -> User | None:
-        """Get a user by ID."""
-
-        return self.repository.get_by_id(user_id)
 
     def create_user(self, data: UserCreate) -> User:
         """Create a new user."""
