@@ -149,6 +149,93 @@ def upload_resume(
         ) from exc
 
 
+@router.get(
+    "",
+    response_model=list[ResumeResponse],
+)
+def get_resumes(
+    current_user: User = Depends(get_current_user),
+    service: ResumeService = Depends(
+        get_resume_service,
+    ),
+) -> list[ResumeResponse]:
+    """Get all resumes belonging to the authenticated user."""
+
+    resumes = service.get_user_resumes(
+        user_id=current_user.id,
+    )
+
+    return [
+        ResumeResponse.model_validate(resume)
+        for resume in resumes
+    ]
+
+@router.get(
+    "/{resume_id}",
+    response_model=ResumeResponse,
+)
+def get_resume(
+    resume_id: UUID,
+    current_user: User = Depends(get_current_user),
+    service: ResumeService = Depends(
+        get_resume_service,
+    ),
+) -> ResumeResponse:
+    """Get a single resume belonging to the authenticated user."""
+
+    try:
+        resume = service.get_resume(
+            resume_id=resume_id,
+            user_id=current_user.id,
+        )
+
+        return ResumeResponse.model_validate(resume)
+
+    except ResourceAccessDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from exc
+
+    except ResourceNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+
+@router.delete(
+    "/{resume_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_resume(
+    resume_id: UUID,
+    current_user: User = Depends(get_current_user),
+    service: ResumeService = Depends(
+        get_resume_service,
+    ),
+) -> None:
+    """Delete a resume belonging to the authenticated user."""
+
+    try:
+        service.delete_resume(
+            resume_id=resume_id,
+            user_id=current_user.id,
+        )
+
+    except ResourceAccessDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from exc
+
+    except ResourceNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+
 # ---------------------------------------------------------------------------
 # Analyze resume
 # ---------------------------------------------------------------------------

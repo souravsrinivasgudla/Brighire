@@ -3,6 +3,11 @@
 from pathlib import Path
 from uuid import UUID, uuid4
 
+from app.shared.exceptions import (
+    ResourceAccessDeniedError,
+    ResourceNotFoundError,
+)
+
 from fastapi import UploadFile
 
 from app.resumes.extractor import extract_text_from_pdf
@@ -55,3 +60,57 @@ class ResumeService:
             storage_path=str(file_path),
             extracted_text=extracted_text,
         )
+
+    def get_user_resumes(
+        self,
+        *,
+        user_id: UUID,
+    ) -> list[Resume]:
+        """Get all resumes belonging to a user."""
+
+        return self.repository.get_by_user_id(
+            user_id=user_id,
+        )
+    def get_resume(
+        self,
+        *,
+        resume_id: UUID,
+        user_id: UUID,
+    ) -> Resume:
+        """Get a resume belonging to the authenticated user."""
+
+        resume = self.repository.get_by_id(resume_id)
+
+        if resume is None:
+            raise ResourceNotFoundError(
+                "Resume not found."
+            )
+
+        if resume.user_id != user_id:
+            raise ResourceAccessDeniedError(
+                "You do not have access to this resume."
+            )
+
+        return resume
+
+    def delete_resume(
+        self,
+        *,
+        resume_id: UUID,
+        user_id: UUID,
+    ) -> None:
+        """Delete a user's resume and its stored file."""
+
+        resume = self.get_resume(
+            resume_id=resume_id,
+            user_id=user_id,
+        )
+
+        storage_path = Path(resume.storage_path)
+
+        self.repository.delete(
+            resume=resume,
+        )
+
+        if storage_path.exists():
+            storage_path.unlink()

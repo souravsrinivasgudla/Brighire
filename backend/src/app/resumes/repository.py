@@ -60,3 +60,13 @@ class ResumeRepository:
         )
 
         return list(self.db.scalars(statement).all())
+
+    def delete(
+        self,
+        *,
+        resume: Resume,
+    ) -> None:
+        """Delete a resume."""
+
+        self.db.delete(resume)
+        self.db.commit()
