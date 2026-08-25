@@ -9,7 +9,11 @@ from app.auth.dependencies import get_current_user
 from app.core.database import get_db
 from app.users.models import User
 from app.users.repository import UserRepository
-from app.users.schemas import UserCreate, UserResponse
+from app.users.schemas import (
+    UserCreate,
+    UserResponse,
+    UserUpdate,
+)
 from app.users.service import UserService
 
 
@@ -42,7 +46,9 @@ def create_user(
 
     try:
         user = service.create_user(data)
+
         return UserResponse.model_validate(user)
+
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -59,7 +65,35 @@ def get_current_user_profile(
 ) -> UserResponse:
     """Get the currently authenticated user."""
 
-    return UserResponse.model_validate(current_user)
+    return UserResponse.model_validate(
+        current_user,
+    )
+
+
+@router.patch(
+    "/me",
+    response_model=UserResponse,
+)
+def update_current_user_profile(
+    data: UserUpdate,
+    current_user: User = Depends(get_current_user),
+    service: UserService = Depends(get_user_service),
+) -> UserResponse:
+    """Update the currently authenticated user's profile."""
+
+    try:
+        user = service.update_user(
+            user_id=current_user.id,
+            data=data,
+        )
+
+        return UserResponse.model_validate(user)
+
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
 
 
 @router.get(
@@ -81,5 +115,3 @@ def get_user(
         )
 
     return UserResponse.model_validate(user)
-
-

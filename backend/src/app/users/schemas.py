@@ -22,3 +22,8 @@ class UserResponse(BaseModel):
     email: EmailStr
     full_name: str
     is_active: bool
+
+class UserUpdate(BaseModel):
+    """Request schema for updating the current user."""
+
+    full_name: str | None = None

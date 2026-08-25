@@ -4,7 +4,7 @@ from uuid import UUID
 
 from app.users.models import User
 from app.users.repository import UserRepository
-from app.users.schemas import UserCreate
+from app.users.schemas import UserCreate, UserUpdate
 from app.core.security import hash_password
 
 
@@ -33,4 +33,22 @@ class UserService:
             email=str(data.email),
             full_name=data.full_name,
             hashed_password=hashed_password,
+        )
+
+    def update_user(
+        self,
+        *,
+        user_id: UUID,
+        data: UserUpdate,
+    ) -> User:
+        """Update the current user's profile."""
+
+        user = self.repository.get_by_id(user_id)
+
+        if user is None:
+            raise ValueError("User not found.")
+
+        return self.repository.update(
+            user=user,
+            full_name=data.full_name,
         )
