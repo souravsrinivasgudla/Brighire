@@ -9,6 +9,7 @@ from app.auth.router import router as auth_router
 from app.resumes.router import router as resumes_router
 from app.jobs.router import router as jobs_router
 from app.jobs.match_router import router as match_router
+from app.dashboard.router import router as dashboard_router
 
 router = APIRouter()
 
@@ -19,3 +20,4 @@ router.include_router(auth_router)
 router.include_router(resumes_router)
 router.include_router(jobs_router)
 router.include_router(match_router)
+router.include_router(dashboard_router)
