@@ -8,7 +8,6 @@ from app.jobs.repository import JobRepository
 from app.jobs.schemas import JobCreate, JobUpdate
 from app.resumes.repository import ResumeRepository
 from app.shared.exceptions import (
-    ResourceAccessDeniedError,
     ResourceNotFoundError,
 )
 
@@ -51,14 +50,9 @@ class JobService:
 
         job = self.repository.get_by_id(job_id)
 
-        if job is None:
+        if job is None or job.user_id != user_id:
             raise ResourceNotFoundError(
                 "Job not found."
-            )
-
-        if job.user_id != user_id:
-            raise ResourceAccessDeniedError(
-                "You do not have access to this job."
             )
 
         return job
@@ -115,14 +109,9 @@ class JobService:
                 resume_id
             )
 
-            if resume is None:
+            if resume is None or resume.user_id != user_id:
                 raise ResourceNotFoundError(
                     "Resume not found."
-                )
-
-            if resume.user_id != user_id:
-                raise ResourceAccessDeniedError(
-                    "You do not have access to this resume."
                 )
 
         offset = (page - 1) * page_size
