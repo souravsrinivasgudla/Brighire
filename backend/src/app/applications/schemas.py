@@ -1,17 +1,25 @@
 """Application API schemas."""
 
 from datetime import datetime
+from enum import Enum
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-APPLICATION_STATUSES = (
-    "applied",
-    "reviewing",
-    "interview",
-    "offer",
-    "rejected",
-    "withdrawn",
+
+class ApplicationStatus(str, Enum):
+    """Allowed job application statuses."""
+
+    APPLIED = "applied"
+    REVIEWING = "reviewing"
+    INTERVIEW = "interview"
+    OFFER = "offer"
+    REJECTED = "rejected"
+    WITHDRAWN = "withdrawn"
+
+
+APPLICATION_STATUSES = tuple(
+    status.value for status in ApplicationStatus
 )
 
 
@@ -29,10 +37,7 @@ class ApplicationCreate(BaseModel):
 class ApplicationUpdate(BaseModel):
     """Schema for updating an application."""
 
-    status: str = Field(
-        min_length=1,
-        max_length=50,
-    )
+    status: ApplicationStatus
 
 
 class ApplicationResponse(BaseModel):
@@ -44,7 +49,7 @@ class ApplicationResponse(BaseModel):
     user_id: UUID
     job_id: UUID
     resume_id: UUID
-    status: str
+    status: ApplicationStatus
     cover_letter: str | None
     created_at: datetime
     updated_at: datetime

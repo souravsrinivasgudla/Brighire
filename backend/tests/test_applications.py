@@ -2,6 +2,7 @@
 
 from uuid import uuid4
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
@@ -229,6 +230,119 @@ def test_duplicate_application_returns_409(
 
     assert first.status_code == 201
     assert second.status_code == 409
+    assert second.json()["detail"] == (
+        "You have already applied to this job."
+    )
+    assert "integrity" not in second.json()["detail"].lower()
+    assert "unique" not in second.json()["detail"].lower()
+
+    listed = client.get(
+        "/api/v1/applications",
+        headers=headers,
+    )
+    assert listed.status_code == 200
+    assert len(listed.json()) == 1
+
+
+def test_concurrent_duplicate_application_returns_409(
+    client: TestClient,
+    db_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """IntegrityError from a raced duplicate create maps to 409."""
+
+    from app.applications.repository import ApplicationRepository
+
+    user = create_user(db_session, email="app-race@example.com")
+    job = create_job(db_session, user=user)
+    resume = create_resume(db_session, user=user)
+    headers = auth_header(user)
+    payload = {
+        "job_id": str(job.id),
+        "resume_id": str(resume.id),
+    }
+
+    first = client.post(
+        "/api/v1/applications",
+        headers=headers,
+        json=payload,
+    )
+    assert first.status_code == 201
+
+    # Simulate a race where the pre-check does not see the existing row.
+    monkeypatch.setattr(
+        ApplicationRepository,
+        "get_by_user_and_job",
+        lambda self, **kwargs: None,
+    )
+
+    raced = client.post(
+        "/api/v1/applications",
+        headers=headers,
+        json=payload,
+    )
+
+    assert raced.status_code == 409
+    assert raced.json()["detail"] == (
+        "You have already applied to this job."
+    )
+    assert "UNIQUE" not in raced.json()["detail"]
+    assert "IntegrityError" not in raced.json()["detail"]
+
+    # Restore lookup and confirm only one application remains.
+    monkeypatch.undo()
+    listed = client.get(
+        "/api/v1/applications",
+        headers=headers,
+    )
+    assert listed.status_code == 200
+    assert len(listed.json()) == 1
+
+
+def test_application_integrity_error_does_not_become_500(
+    client: TestClient,
+    db_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Repository IntegrityError is converted to a controlled 409."""
+
+    from sqlalchemy.exc import IntegrityError
+
+    from app.applications.repository import ApplicationRepository
+
+    user = create_user(db_session, email="app-integrity@example.com")
+    job = create_job(db_session, user=user)
+    resume = create_resume(db_session, user=user)
+    headers = auth_header(user)
+
+    def raise_integrity(self, **kwargs):
+        raise IntegrityError("INSERT", {}, Exception("uq_user_job_application"))
+
+    monkeypatch.setattr(
+        ApplicationRepository,
+        "get_by_user_and_job",
+        lambda self, **kwargs: None,
+    )
+    monkeypatch.setattr(
+        ApplicationRepository,
+        "create",
+        raise_integrity,
+    )
+
+    response = client.post(
+        "/api/v1/applications",
+        headers=headers,
+        json={
+            "job_id": str(job.id),
+            "resume_id": str(resume.id),
+        },
+    )
+
+    assert response.status_code == 409
+    assert response.status_code != 500
+    assert response.json()["detail"] == (
+        "You have already applied to this job."
+    )
 
 
 def test_list_own_applications(
@@ -422,12 +536,19 @@ def test_update_application_accepts_valid_statuses(
         assert response.status_code == 200
         assert response.json()["status"] == status_value
 
+        persisted = client.get(
+            f"/api/v1/applications/{application_id}",
+            headers=headers,
+        )
+        assert persisted.status_code == 200
+        assert persisted.json()["status"] == status_value
 
-def test_update_application_invalid_status_returns_400(
+
+def test_update_application_invalid_status_returns_422(
     client: TestClient,
     db_session: Session,
 ) -> None:
-    """Invalid application status returns 400."""
+    """Invalid application status is rejected by schema validation."""
 
     user = create_user(db_session, email="app-invalid-status@example.com")
     job = create_job(db_session, user=user)
@@ -439,14 +560,63 @@ def test_update_application_invalid_status_returns_400(
         headers=headers,
         json={"job_id": str(job.id), "resume_id": str(resume.id)},
     )
+    application_id = created.json()["id"]
+    assert created.json()["status"] == "applied"
 
     response = client.patch(
-        f"/api/v1/applications/{created.json()['id']}",
+        f"/api/v1/applications/{application_id}",
         headers=headers,
         json={"status": "not-a-real-status"},
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 422
+    body = response.json()
+    assert "detail" in body
+
+    persisted = client.get(
+        f"/api/v1/applications/{application_id}",
+        headers=headers,
+    )
+    assert persisted.status_code == 200
+    assert persisted.json()["status"] == "applied"
+
+
+def test_invalid_status_does_not_reach_service_layer(
+    client: TestClient,
+    db_session: Session,
+) -> None:
+    """Schema rejects invalid statuses before service mutation."""
+
+    user = create_user(db_session, email="app-schema-status@example.com")
+    job = create_job(db_session, user=user)
+    resume = create_resume(db_session, user=user)
+    headers = auth_header(user)
+
+    created = client.post(
+        "/api/v1/applications",
+        headers=headers,
+        json={"job_id": str(job.id), "resume_id": str(resume.id)},
+    )
+    application_id = created.json()["id"]
+
+    response = client.patch(
+        f"/api/v1/applications/{application_id}",
+        headers=headers,
+        json={"status": "accepted"},
+    )
+
+    assert response.status_code == 422
+    assert response.status_code != 400
+    assert response.status_code != 500
+
+    listed = client.get(
+        "/api/v1/applications",
+        headers=headers,
+    )
+    assert listed.status_code == 200
+    assert len(listed.json()) == 1
+    assert listed.json()[0]["status"] == "applied"
+    assert listed.json()[0]["id"] == application_id
 
 
 def test_cannot_update_another_users_application(

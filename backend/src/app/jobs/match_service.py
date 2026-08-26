@@ -2,6 +2,9 @@
 
 from uuid import UUID
 
+from pydantic import ValidationError
+from sqlalchemy.exc import IntegrityError
+
 from app.ai.client import GroqAIClient
 from app.ai.match_schemas import ResumeJobMatchAIResponse
 from app.jobs.match_models import ResumeJobMatch
@@ -9,6 +12,8 @@ from app.jobs.match_repository import ResumeJobMatchRepository
 from app.jobs.repository import JobRepository
 from app.resumes.repository import ResumeRepository
 from app.shared.exceptions import (
+    AIProviderRequestError,
+    ResourceConflictError,
     ResourceNotFoundError,
     ResourceNotReadyError,
 )
@@ -46,7 +51,7 @@ class ResumeJobMatchService:
             )
 
         if resume.user_id != user_id:
-             raise ResourceNotFoundError(
+            raise ResourceNotFoundError(
                 "Resume not found."
             )
 
@@ -63,7 +68,7 @@ class ResumeJobMatchService:
             )
 
         if job.user_id != user_id:
-             raise ResourceNotFoundError(
+            raise ResourceNotFoundError(
                 "Job not found."
             )
 
@@ -85,21 +90,32 @@ class ResumeJobMatchService:
             requirements=job.requirements,
         )
 
-        analysis = ResumeJobMatchAIResponse.model_validate(
-            ai_result
-        )
+        try:
+            analysis = ResumeJobMatchAIResponse.model_validate(
+                ai_result
+            )
+        except ValidationError as exc:
+            raise AIProviderRequestError(
+                "AI service failed to process the request."
+            ) from exc
 
-        match = self.match_repository.create(
-            resume_id=resume_id,
-            job_id=job_id,
-            match_score=analysis.match_score,
-            summary=analysis.summary,
-            matched_skills=analysis.matched_skills,
-            missing_skills=analysis.missing_skills,
-            strengths=analysis.strengths,
-            gaps=analysis.gaps,
-            recommendations=analysis.recommendations,
-        )
+        try:
+            match = self.match_repository.create(
+                resume_id=resume_id,
+                job_id=job_id,
+                match_score=analysis.match_score,
+                summary=analysis.summary,
+                matched_skills=analysis.matched_skills,
+                missing_skills=analysis.missing_skills,
+                strengths=analysis.strengths,
+                gaps=analysis.gaps,
+                recommendations=analysis.recommendations,
+            )
+        except IntegrityError:
+            self.match_repository.db.rollback()
+            raise ResourceConflictError(
+                "A match for this resume and job already exists."
+            ) from None
 
         return match, True
 
@@ -147,7 +163,7 @@ class ResumeJobMatchService:
             )
 
         if resume.user_id != user_id:
-             raise ResourceNotFoundError(
+            raise ResourceNotFoundError(
                 "Resume not found."
             )
 
@@ -159,7 +175,7 @@ class ResumeJobMatchService:
             )
 
         if job.user_id != user_id:
-             raise ResourceNotFoundError(
+            raise ResourceNotFoundError(
                 "Job not found."
             )
 

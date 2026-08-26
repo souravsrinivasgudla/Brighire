@@ -30,6 +30,8 @@ from app.resumes.schemas import ResumeResponse
 from app.resumes.schemas_analysis import ResumeAnalysisResponse
 from app.resumes.service import ResumeService
 from app.shared.exceptions import (
+    AIProviderRequestError,
+    AIProviderUnavailableError,
     ResourceNotFoundError,
     ResourceNotReadyError,
 )
@@ -264,7 +266,19 @@ def analyze_resume(
 
     except ResourceNotReadyError as exc:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    except AIProviderUnavailableError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
+
+    except AIProviderRequestError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
             detail=str(exc),
         ) from exc
 
@@ -303,9 +317,10 @@ def get_resume_analysis(
 
     except ResourceNotReadyError as exc:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=status.HTTP_409_CONFLICT,
             detail=str(exc),
         ) from exc
+
 
 # ---------------------------------------------------------------------------
 # Get resume job matches

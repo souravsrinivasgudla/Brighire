@@ -12,12 +12,14 @@ class Settings(BaseSettings):
 
     host: str = "127.0.0.1"
     port: int = 8000
-    debug: bool = True
+    debug: bool = False
 
     max_resume_size_mb: int = 10
 
     cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
     redis_url: str = "redis://localhost:6379/0"
+    redis_socket_connect_timeout: float = 2.0
+    redis_socket_timeout: float = 2.0
 
     database_url: str
     secret_key: str
@@ -26,6 +28,7 @@ class Settings(BaseSettings):
 
     groq_api_key: str
     groq_model: str = "llama-3.3-70b-versatile"
+    groq_timeout_seconds: float = 30.0
 
     model_config = SettingsConfigDict(
         env_file=_ENV_FILE,

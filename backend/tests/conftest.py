@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Generator
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
 from uuid import uuid4
 
 import pytest
@@ -13,12 +13,12 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-import app.applications.models  # noqa: F401
-import app.jobs.match_models  # noqa: F401
-import app.jobs.models  # noqa: F401
-import app.resumes.analysis_models  # noqa: F401
-import app.resumes.models  # noqa: F401
-import app.users.models  # noqa: F401
+import app.applications.models
+import app.jobs.match_models
+import app.jobs.models
+import app.resumes.analysis_models
+import app.resumes.models
+import app.users.models
 from app.core.database import Base, get_db
 from app.core.security import create_access_token, hash_password
 from app.jobs.models import Job
@@ -27,24 +27,77 @@ from app.resumes.models import Resume
 from app.users.models import User
 
 
+class FakeRedisPipeline:
+    """Minimal Redis pipeline stand-in for rate-limit tests."""
+
+    def __init__(self, redis: FakeRedis) -> None:
+        self._redis = redis
+        self._operations: list[tuple[Any, ...]] = []
+
+    def __enter__(self) -> Self:
+        self._redis._raise_if_unavailable()
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        return None
+
+    def incr(self, key: str) -> Self:
+        self._operations.append(("incr", key))
+        return self
+
+    def expire(self, key: str, seconds: int) -> Self:
+        self._operations.append(("expire", key, seconds))
+        return self
+
+    def execute(self) -> list[Any]:
+        self._redis._raise_if_unavailable()
+
+        results: list[Any] = []
+
+        for operation in self._operations:
+            if operation[0] == "incr":
+                results.append(self._redis.incr(operation[1]))
+            elif operation[0] == "expire":
+                results.append(
+                    self._redis.expire(operation[1], operation[2])
+                )
+
+        self._operations.clear()
+        return results
+
+
 class FakeRedis:
     """In-memory Redis stand-in for deterministic rate-limit tests."""
 
     def __init__(self) -> None:
         self.counts: dict[str, int] = {}
         self.ttls: dict[str, int] = {}
+        self.unavailable: bool = False
+
+    def _raise_if_unavailable(self) -> None:
+        if self.unavailable:
+            from redis.exceptions import RedisError
+
+            raise RedisError("Redis is unavailable")
 
     def incr(self, key: str) -> int:
+        self._raise_if_unavailable()
         self.counts[key] = self.counts.get(key, 0) + 1
         return self.counts[key]
 
     def expire(self, key: str, seconds: int) -> bool:
+        self._raise_if_unavailable()
         self.ttls[key] = seconds
         return True
+
+    def pipeline(self, transaction: bool = True) -> FakeRedisPipeline:
+        self._raise_if_unavailable()
+        return FakeRedisPipeline(self)
 
     def reset(self) -> None:
         self.counts.clear()
         self.ttls.clear()
+        self.unavailable = False
 
 
 @pytest.fixture()

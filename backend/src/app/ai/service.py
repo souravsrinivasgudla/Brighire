@@ -1,7 +1,10 @@
 """AI business logic."""
 
+from pydantic import ValidationError
+
 from app.ai.client import GroqAIClient
 from app.ai.schemas import ResumeAnalysis
+from app.shared.exceptions import AIProviderRequestError
 
 
 class ResumeAIService:
@@ -18,4 +21,9 @@ class ResumeAIService:
 
         result = self.client.analyze_resume(resume_text)
 
-        return ResumeAnalysis.model_validate(result)
+        try:
+            return ResumeAnalysis.model_validate(result)
+        except ValidationError as exc:
+            raise AIProviderRequestError(
+                "AI service failed to process the request."
+            ) from exc

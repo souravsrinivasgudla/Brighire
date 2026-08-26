@@ -15,6 +15,9 @@ from app.jobs.match_service import ResumeJobMatchService
 from app.jobs.repository import JobRepository
 from app.resumes.repository import ResumeRepository
 from app.shared.exceptions import (
+    AIProviderRequestError,
+    AIProviderUnavailableError,
+    ResourceConflictError,
     ResourceNotFoundError,
     ResourceNotReadyError,
 )
@@ -89,9 +92,27 @@ def create_match(
             detail=str(exc),
         ) from exc
 
+    except ResourceConflictError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
     except ResourceNotReadyError as exc:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    except AIProviderUnavailableError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
+
+    except AIProviderRequestError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
             detail=str(exc),
         ) from exc
 
@@ -130,6 +151,6 @@ def get_match(
 
     except ResourceNotReadyError as exc:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=status.HTTP_409_CONFLICT,
             detail=str(exc),
         ) from exc

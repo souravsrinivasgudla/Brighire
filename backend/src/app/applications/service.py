@@ -2,9 +2,14 @@
 
 from uuid import UUID
 
+from sqlalchemy.exc import IntegrityError
+
 from app.applications.models import Application
 from app.applications.repository import ApplicationRepository
-from app.applications.schemas import APPLICATION_STATUSES
+from app.applications.schemas import (
+    APPLICATION_STATUSES,
+    ApplicationStatus,
+)
 from app.jobs.repository import JobRepository
 from app.resumes.repository import ResumeRepository
 from app.shared.exceptions import (
@@ -73,12 +78,18 @@ class ApplicationService:
                 "You have already applied to this job."
             )
 
-        return self.application_repository.create(
-            user_id=user_id,
-            job_id=job_id,
-            resume_id=resume_id,
-            cover_letter=cover_letter,
-        )
+        try:
+            return self.application_repository.create(
+                user_id=user_id,
+                job_id=job_id,
+                resume_id=resume_id,
+                cover_letter=cover_letter,
+            )
+        except IntegrityError:
+            self.application_repository.db.rollback()
+            raise ResourceConflictError(
+                "You have already applied to this job."
+            ) from None
 
     def get(
         self,
@@ -120,7 +131,7 @@ class ApplicationService:
         *,
         application_id: UUID,
         user_id: UUID,
-        status: str,
+        status: ApplicationStatus | str,
     ) -> Application:
         """Update the status of an application."""
 
@@ -129,14 +140,20 @@ class ApplicationService:
             user_id=user_id,
         )
 
-        if status not in APPLICATION_STATUSES:
+        status_value = (
+            status.value
+            if isinstance(status, ApplicationStatus)
+            else status
+        )
+
+        if status_value not in APPLICATION_STATUSES:
             raise ValueError(
-                f"Invalid application status: {status}."
+                f"Invalid application status: {status_value}."
             )
 
         return self.application_repository.update(
             application,
-            status=status,
+            status=status_value,
         )
 
     def delete(

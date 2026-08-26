@@ -11,10 +11,7 @@ from app.jobs.repository import JobRepository
 from app.jobs.schemas import JobCreate, JobListResponse, JobResponse, JobUpdate
 from app.jobs.service import JobService
 from app.resumes.repository import ResumeRepository
-from app.shared.exceptions import (
-    ResourceAccessDeniedError,
-    ResourceNotFoundError,
-)
+from app.shared.exceptions import ResourceNotFoundError
 from app.users.models import User
 
 router = APIRouter(
@@ -118,12 +115,6 @@ def get_jobs(
             pages=pages,
         )
 
-    except ResourceAccessDeniedError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(exc),
-        ) from exc
-
     except ResourceNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -162,11 +153,6 @@ def get_job(
             detail=str(exc),
         ) from exc
 
-    except ResourceAccessDeniedError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(exc),
-        ) from exc
 
 @router.put(
     "/{job_id}",
@@ -195,11 +181,6 @@ def update_job(
             detail=str(exc),
         ) from exc
 
-    except ResourceAccessDeniedError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(exc),
-        ) from exc
 
 @router.delete(
     "/{job_id}",
@@ -221,11 +202,5 @@ def delete_job(
     except ResourceNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(exc),
-        ) from exc
-
-    except ResourceAccessDeniedError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
             detail=str(exc),
         ) from exc
