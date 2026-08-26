@@ -35,6 +35,7 @@ def create_access_token(subject: str) -> str:
     payload = {
         "sub": subject,
         "exp": expires_at,
+        "type": "access",
     }
 
     return jwt.encode(
@@ -42,3 +43,40 @@ def create_access_token(subject: str) -> str:
         settings.secret_key,
         algorithm=settings.algorithm,
     )
+
+
+def create_password_reset_token(subject: str) -> str:
+    """Create a short-lived JWT for password reset."""
+
+    expires_at = datetime.now(UTC) + timedelta(minutes=30)
+
+    payload = {
+        "sub": subject,
+        "exp": expires_at,
+        "type": "password_reset",
+    }
+
+    return jwt.encode(
+        payload,
+        settings.secret_key,
+        algorithm=settings.algorithm,
+    )
+
+
+def decode_password_reset_token(token: str) -> str:
+    """Decode a password-reset JWT and return the subject user id."""
+
+    payload = jwt.decode(
+        token,
+        settings.secret_key,
+        algorithms=[settings.algorithm],
+    )
+
+    if payload.get("type") != "password_reset":
+        raise ValueError("Invalid password reset token.")
+
+    subject = payload.get("sub")
+    if not subject or not isinstance(subject, str):
+        raise ValueError("Invalid password reset token.")
+
+    return subject

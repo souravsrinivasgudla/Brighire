@@ -47,17 +47,21 @@ class UserRepository:
         self.db.refresh(user)
 
         return user
-    
+
     def update(
         self,
         *,
         user: User,
-        full_name: str | None,
+        full_name: str | None = None,
+        hashed_password: str | None = None,
     ) -> User:
         """Update a user."""
 
         if full_name is not None:
             user.full_name = full_name
+
+        if hashed_password is not None:
+            user.hashed_password = hashed_password
 
         self.db.commit()
         self.db.refresh(user)

@@ -1,6 +1,7 @@
 """Groq AI client."""
 
 import json
+import logging
 from typing import Any
 
 from groq import (
@@ -18,6 +19,8 @@ from app.shared.exceptions import (
     AIProviderRequestError,
     AIProviderUnavailableError,
 )
+
+logger = logging.getLogger(__name__)
 
 _AI_UNAVAILABLE = "AI service is temporarily unavailable."
 _AI_REQUEST_FAILED = "AI service failed to process the request."
@@ -147,6 +150,10 @@ class GroqAIClient:
             content = response.choices[0].message.content
 
             if not content:
+                logger.error(
+                    "Groq returned an empty completion (model=%s).",
+                    settings.groq_model,
+                )
                 raise AIProviderRequestError(_AI_REQUEST_FAILED)
 
             return json.loads(content)
@@ -156,12 +163,52 @@ class GroqAIClient:
         except AIProviderRequestError:
             raise
         except APITimeoutError:
+            logger.warning(
+                "Groq request timed out after %ss (model=%s).",
+                settings.groq_timeout_seconds,
+                settings.groq_model,
+            )
             raise AIProviderUnavailableError(_AI_UNAVAILABLE) from None
-        except APIConnectionError:
+        except APIConnectionError as exc:
+            logger.warning(
+                "Groq connection failed (model=%s): %s",
+                settings.groq_model,
+                exc,
+            )
             raise AIProviderUnavailableError(_AI_UNAVAILABLE) from None
-        except (APIStatusError, APIError):
+        except APIStatusError as exc:
+            logger.error(
+                "Groq rejected the request with HTTP %s (model=%s): %s",
+                exc.status_code,
+                settings.groq_model,
+                exc.message,
+            )
             raise AIProviderRequestError(_AI_REQUEST_FAILED) from None
-        except GroqError:
+        except APIError as exc:
+            logger.error(
+                "Groq API error (model=%s): %s",
+                settings.groq_model,
+                exc,
+            )
+            raise AIProviderRequestError(_AI_REQUEST_FAILED) from None
+        except GroqError as exc:
+            logger.warning(
+                "Groq client error (model=%s): %s",
+                settings.groq_model,
+                exc,
+            )
             raise AIProviderUnavailableError(_AI_UNAVAILABLE) from None
-        except (json.JSONDecodeError, TypeError, ValueError, KeyError, IndexError):
+        except (
+            json.JSONDecodeError,
+            TypeError,
+            ValueError,
+            KeyError,
+            IndexError,
+        ) as exc:
+            logger.error(
+                "Groq returned an unusable payload (model=%s): %s: %s",
+                settings.groq_model,
+                type(exc).__name__,
+                exc,
+            )
             raise AIProviderRequestError(_AI_REQUEST_FAILED) from None

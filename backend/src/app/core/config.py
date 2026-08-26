@@ -16,7 +16,10 @@ class Settings(BaseSettings):
 
     max_resume_size_mb: int = 10
 
-    cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
+    cors_origins: str = (
+        "http://localhost:5173,http://127.0.0.1:5173,"
+        "http://localhost:3000,http://127.0.0.1:3000"
+    )
     redis_url: str = "redis://localhost:6379/0"
     redis_socket_connect_timeout: float = 2.0
     redis_socket_timeout: float = 2.0
@@ -27,7 +30,7 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
 
     groq_api_key: str
-    groq_model: str = "llama-3.3-70b-versatile"
+    groq_model: str = "openai/gpt-oss-120b"
     groq_timeout_seconds: float = 30.0
 
     model_config = SettingsConfigDict(

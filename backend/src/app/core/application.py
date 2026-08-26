@@ -6,10 +6,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.root import router as root_router
 from app.api.v1.router import router as api_router
 from app.core.config import settings
+from app.core.logging import configure_logging
 
 
 def create_application() -> FastAPI:
     """Create and configure the FastAPI application."""
+
+    configure_logging()
 
     is_development = settings.app_env.lower() == "development"
 
