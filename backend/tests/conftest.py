@@ -13,11 +13,12 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-import app.jobs.match_models
-import app.jobs.models
-import app.resumes.analysis_models
-import app.resumes.models
-import app.users.models
+import app.applications.models  # noqa: F401
+import app.jobs.match_models  # noqa: F401
+import app.jobs.models  # noqa: F401
+import app.resumes.analysis_models  # noqa: F401
+import app.resumes.models  # noqa: F401
+import app.users.models  # noqa: F401
 from app.core.database import Base, get_db
 from app.core.security import create_access_token, hash_password
 from app.jobs.models import Job

@@ -1,6 +1,7 @@
 """Candidate dashboard API endpoints."""
 
 from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -9,9 +10,8 @@ from app.core.database import get_db
 from app.dashboard.repository import DashboardRepository
 from app.dashboard.schemas import DashboardResponse, DashboardResumeResponse
 from app.dashboard.service import DashboardService
-from app.users.models import User
 from app.shared.exceptions import ResourceNotFoundError
-
+from app.users.models import User
 
 router = APIRouter(
     prefix="/dashboard",

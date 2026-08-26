@@ -1,11 +1,12 @@
 """Alembic migration environment."""
 
-from logging.config import fileConfig
 import sys
+from logging.config import fileConfig
 from pathlib import Path
 
-from alembic import context
 from sqlalchemy import engine_from_config, pool
+
+from alembic import context
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC_PATH = PROJECT_ROOT / "src"
@@ -13,14 +14,15 @@ SRC_PATH = PROJECT_ROOT / "src"
 if str(SRC_PATH) not in sys.path:
     sys.path.insert(0, str(SRC_PATH))
 
+# Imported for Alembic model registration.
+from app.applications.models import Application  # noqa: F401
 from app.core.config import settings
 from app.core.database import Base
-from app.users.models import User
-from app.resumes.models import Resume
-from app.resumes.analysis_models import ResumeAnalysis
-from app.jobs.models import Job
-from app.jobs.match_models import ResumeJobMatch
-
+from app.jobs.match_models import ResumeJobMatch  # noqa: F401
+from app.jobs.models import Job  # noqa: F401
+from app.resumes.analysis_models import ResumeAnalysis  # noqa: F401
+from app.resumes.models import Resume  # noqa: F401
+from app.users.models import User  # noqa: F401
 
 config = context.config
 

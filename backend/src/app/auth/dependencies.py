@@ -12,7 +12,6 @@ from app.core.database import get_db
 from app.users.models import User
 from app.users.repository import UserRepository
 
-
 bearer_scheme = HTTPBearer()
 
 

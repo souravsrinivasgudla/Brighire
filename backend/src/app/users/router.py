@@ -1,11 +1,11 @@
 """User API endpoints."""
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
-from app.core.rate_limit import rate_limit_by_ip
 from app.auth.dependencies import get_current_user
 from app.core.database import get_db
+from app.core.rate_limit import rate_limit_by_ip
 from app.users.models import User
 from app.users.repository import UserRepository
 from app.users.schemas import (
@@ -14,7 +14,6 @@ from app.users.schemas import (
     UserUpdate,
 )
 from app.users.service import UserService
-
 
 router = APIRouter(
     prefix="/users",

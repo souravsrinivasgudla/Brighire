@@ -15,3 +15,7 @@ class ResourceAccessDeniedError(AppError):
 
 class ResourceNotReadyError(AppError):
     """Raised when a resource is not ready for an operation."""
+
+
+class ResourceConflictError(AppError):
+    """Raised when an operation conflicts with an existing resource."""

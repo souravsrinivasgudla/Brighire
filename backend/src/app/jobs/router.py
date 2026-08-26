@@ -8,15 +8,14 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import get_current_user
 from app.core.database import get_db
 from app.jobs.repository import JobRepository
-from app.jobs.schemas import JobCreate, JobResponse, JobUpdate, JobListResponse
-from app.resumes.repository import ResumeRepository
+from app.jobs.schemas import JobCreate, JobListResponse, JobResponse, JobUpdate
 from app.jobs.service import JobService
+from app.resumes.repository import ResumeRepository
 from app.shared.exceptions import (
     ResourceAccessDeniedError,
     ResourceNotFoundError,
 )
 from app.users.models import User
-
 
 router = APIRouter(
     prefix="/jobs",

@@ -1,11 +1,12 @@
 """Dashboard API schemas."""
 
-from uuid import UUID
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel
 
 from app.resumes.schemas_analysis import ResumeAnalysisResponse
+
 
 class DashboardMatch(BaseModel):
     """Summary of a top resume-job match."""

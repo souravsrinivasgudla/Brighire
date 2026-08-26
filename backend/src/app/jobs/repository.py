@@ -5,8 +5,8 @@ from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.jobs.models import Job
 from app.jobs.match_models import ResumeJobMatch
+from app.jobs.models import Job
 
 
 class JobRepository:

@@ -6,9 +6,9 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.jobs.match_models import ResumeJobMatch
+from app.jobs.models import Job
 from app.resumes.analysis_models import ResumeAnalysis
 from app.resumes.models import Resume
-from app.jobs.models import Job
 
 
 class DashboardRepository:

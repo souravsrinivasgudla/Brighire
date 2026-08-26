@@ -2,10 +2,10 @@
 
 from uuid import UUID
 
+from app.core.security import hash_password
 from app.users.models import User
 from app.users.repository import UserRepository
 from app.users.schemas import UserCreate, UserUpdate
-from app.core.security import hash_password
 
 
 class UserService:

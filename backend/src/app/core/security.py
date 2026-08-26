@@ -1,9 +1,10 @@
 """Security utilities for authentication."""
 
-from pwdlib import PasswordHash
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from jose import jwt
+from pwdlib import PasswordHash
+
 from app.core.config import settings
 
 password_hash = PasswordHash.recommended()
@@ -27,7 +28,7 @@ def verify_password(
 def create_access_token(subject: str) -> str:
     """Create a JWT access token."""
 
-    expires_at = datetime.now(timezone.utc) + timedelta(
+    expires_at = datetime.now(UTC) + timedelta(
         minutes=settings.access_token_expire_minutes
     )
 

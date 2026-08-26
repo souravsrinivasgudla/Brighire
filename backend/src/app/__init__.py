@@ -7,9 +7,9 @@ __author__ = "Gudla Sourav Srinivas"
 __license__ = "Apache-2.0"
 
 __all__ = [
-    "__title__",
-    "__description__",
-    "__version__",
     "__author__",
+    "__description__",
     "__license__",
+    "__title__",
+    "__version__",
 ]

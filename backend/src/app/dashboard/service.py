@@ -3,15 +3,14 @@
 from uuid import UUID
 
 from app.dashboard.repository import DashboardRepository
-
 from app.dashboard.schemas import (
     DashboardMatch,
+    DashboardResponse,
     DashboardResume,
     DashboardResumeResponse,
-    DashboardResponse,
 )
-from app.shared.exceptions import ResourceNotFoundError
 from app.resumes.schemas_analysis import ResumeAnalysisResponse
+from app.shared.exceptions import ResourceNotFoundError
 
 
 class DashboardService:
