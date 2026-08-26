@@ -14,6 +14,10 @@ class Settings(BaseSettings):
     port: int = 8000
     debug: bool = True
 
+    max_resume_size_mb: int = 10
+
+    cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
+
     database_url: str
     secret_key: str
     access_token_expire_minutes: int = 30

@@ -13,6 +13,7 @@ from fastapi import UploadFile
 from app.resumes.extractor import extract_text_from_pdf
 from app.resumes.models import Resume
 from app.resumes.repository import ResumeRepository
+from app.core.config import settings
 
 
 class ResumeService:
@@ -32,10 +33,18 @@ class ResumeService:
         user_id: UUID,
         file: UploadFile,
     ) -> Resume:
-        """Store and process a resume."""
+        """Store and process a resume securely."""
 
         if file.content_type != "application/pdf":
-            raise ValueError("Only PDF files are supported.")
+            raise ValueError(
+                "Only PDF files are supported."
+            )
+
+        max_size = (
+            settings.max_resume_size_mb
+            * 1024
+            * 1024
+        )
 
         original_filename = file.filename or "resume.pdf"
 
@@ -48,18 +57,50 @@ class ResumeService:
             exist_ok=True,
         )
 
-        with file_path.open("wb") as output:
-            while chunk := file.file.read(1024 * 1024):
-                output.write(chunk)
+        total_size = 0
 
-        extracted_text = extract_text_from_pdf(file_path)
+        try:
+            with file_path.open("wb") as output:
+                first_chunk = file.file.read(5)
 
-        return self.repository.create(
-            user_id=user_id,
-            filename=original_filename,
-            storage_path=str(file_path),
-            extracted_text=extracted_text,
-        )
+                if first_chunk != b"%PDF-":
+                    raise ValueError(
+                        "The uploaded file is not a valid PDF."
+                    )
+
+                output.write(first_chunk)
+                total_size += len(first_chunk)
+
+                while chunk := file.file.read(
+                    1024 * 1024
+                ):
+                    total_size += len(chunk)
+
+                    if total_size > max_size:
+                        raise ValueError(
+                            "Resume file is too large. "
+                            f"Maximum size is "
+                            f"{settings.max_resume_size_mb} MB."
+                        )
+
+                    output.write(chunk)
+
+            extracted_text = extract_text_from_pdf(
+                file_path
+            )
+
+            return self.repository.create(
+                user_id=user_id,
+                filename=original_filename,
+                storage_path=str(file_path),
+                extracted_text=extracted_text,
+            )
+
+        except Exception:
+            if file_path.exists():
+                file_path.unlink()
+
+            raise
 
     def get_user_resumes(
         self,
