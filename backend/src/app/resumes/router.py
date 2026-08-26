@@ -13,15 +13,15 @@ from fastapi import (
 )
 from sqlalchemy.orm import Session
 
-from app.jobs.match_repository import ResumeJobMatchRepository
-from app.jobs.match_schemas import ResumeJobMatchResponse
-from app.jobs.match_service import ResumeJobMatchService
-from app.jobs.repository import JobRepository
-
 from app.ai.client import GroqAIClient
 from app.ai.service import ResumeAIService
 from app.auth.dependencies import get_current_user
 from app.core.database import get_db
+from app.core.rate_limit import rate_limit_by_user
+from app.jobs.match_repository import ResumeJobMatchRepository
+from app.jobs.match_schemas import ResumeJobMatchResponse
+from app.jobs.match_service import ResumeJobMatchService
+from app.jobs.repository import JobRepository
 from app.resumes.analysis_repository import ResumeAnalysisRepository
 from app.resumes.analysis_service import ResumeAnalysisService
 from app.resumes.models import Resume
@@ -30,12 +30,10 @@ from app.resumes.schemas import ResumeResponse
 from app.resumes.schemas_analysis import ResumeAnalysisResponse
 from app.resumes.service import ResumeService
 from app.shared.exceptions import (
-    ResourceAccessDeniedError,
     ResourceNotFoundError,
     ResourceNotReadyError,
 )
 from app.users.models import User
-
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -191,11 +189,6 @@ def get_resume(
 
         return ResumeResponse.model_validate(resume)
 
-    except ResourceAccessDeniedError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(exc),
-        ) from exc
 
     except ResourceNotFoundError as exc:
         raise HTTPException(
@@ -223,11 +216,6 @@ def delete_resume(
             user_id=current_user.id,
         )
 
-    except ResourceAccessDeniedError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(exc),
-        ) from exc
 
     except ResourceNotFoundError as exc:
         raise HTTPException(
@@ -253,6 +241,12 @@ def analyze_resume(
 ) -> ResumeAnalysisResponse:
     """Analyze a resume using AI."""
 
+    rate_limit_by_user(
+        user_id=str(current_user.id),
+        action="resume_analysis",
+        limit=10,
+    )
+
     try:
         analysis = service.analyze(
             resume_id=resume_id,
@@ -261,11 +255,6 @@ def analyze_resume(
 
         return ResumeAnalysisResponse.model_validate(analysis)
 
-    except ResourceAccessDeniedError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(exc),
-        ) from exc
 
     except ResourceNotFoundError as exc:
         raise HTTPException(
@@ -305,11 +294,6 @@ def get_resume_analysis(
 
         return ResumeAnalysisResponse.model_validate(analysis)
 
-    except ResourceAccessDeniedError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(exc),
-        ) from exc
 
     except ResourceNotFoundError as exc:
         raise HTTPException(
@@ -351,11 +335,6 @@ def get_resume_matches(
             for match in matches
         ]
 
-    except ResourceAccessDeniedError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(exc),
-        ) from exc
 
     except ResourceNotFoundError as exc:
         raise HTTPException(

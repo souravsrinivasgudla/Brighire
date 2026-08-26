@@ -8,18 +8,17 @@ from sqlalchemy.orm import Session
 from app.ai.client import GroqAIClient
 from app.auth.dependencies import get_current_user
 from app.core.database import get_db
+from app.core.rate_limit import rate_limit_by_user
 from app.jobs.match_repository import ResumeJobMatchRepository
 from app.jobs.match_schemas import ResumeJobMatchResponse
 from app.jobs.match_service import ResumeJobMatchService
 from app.jobs.repository import JobRepository
 from app.resumes.repository import ResumeRepository
 from app.shared.exceptions import (
-    ResourceAccessDeniedError,
     ResourceNotFoundError,
     ResourceNotReadyError,
 )
 from app.users.models import User
-
 
 router = APIRouter(
     prefix="/jobs",
@@ -63,6 +62,12 @@ def create_match(
 ) -> ResumeJobMatchResponse:
     """Match a resume against a job."""
 
+    rate_limit_by_user(
+        user_id=str(current_user.id),
+        action="job_match",
+        limit=10,
+    )
+
     try:
         match, created = service.match(
             resume_id=resume_id,
@@ -77,11 +82,6 @@ def create_match(
             match
         )
 
-    except ResourceAccessDeniedError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(exc),
-        ) from exc
 
     except ResourceNotFoundError as exc:
         raise HTTPException(
@@ -121,11 +121,6 @@ def get_match(
             match
         )
 
-    except ResourceAccessDeniedError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(exc),
-        ) from exc
 
     except ResourceNotFoundError as exc:
         raise HTTPException(

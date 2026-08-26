@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     max_resume_size_mb: int = 10
 
     cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
+    redis_url: str = "redis://localhost:6379/0"
 
     database_url: str
     secret_key: str

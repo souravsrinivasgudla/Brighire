@@ -9,7 +9,6 @@ from app.jobs.match_repository import ResumeJobMatchRepository
 from app.jobs.repository import JobRepository
 from app.resumes.repository import ResumeRepository
 from app.shared.exceptions import (
-    ResourceAccessDeniedError,
     ResourceNotFoundError,
     ResourceNotReadyError,
 )
@@ -47,8 +46,8 @@ class ResumeJobMatchService:
             )
 
         if resume.user_id != user_id:
-            raise ResourceAccessDeniedError(
-                "You do not have access to this resume."
+             raise ResourceNotFoundError(
+                "Resume not found."
             )
 
         if not resume.extracted_text:
@@ -64,8 +63,8 @@ class ResumeJobMatchService:
             )
 
         if job.user_id != user_id:
-            raise ResourceAccessDeniedError(
-                "You do not have access to this job."
+             raise ResourceNotFoundError(
+                "Job not found."
             )
 
         existing_match = (
@@ -148,8 +147,8 @@ class ResumeJobMatchService:
             )
 
         if resume.user_id != user_id:
-            raise ResourceAccessDeniedError(
-                "You do not have access to this resume."
+             raise ResourceNotFoundError(
+                "Resume not found."
             )
 
         job = self.job_repository.get_by_id(job_id)
@@ -160,8 +159,8 @@ class ResumeJobMatchService:
             )
 
         if job.user_id != user_id:
-            raise ResourceAccessDeniedError(
-                "You do not have access to this job."
+             raise ResourceNotFoundError(
+                "Job not found."
             )
 
     def get_resume_matches(
@@ -180,8 +179,8 @@ class ResumeJobMatchService:
             )
 
         if resume.user_id != user_id:
-            raise ResourceAccessDeniedError(
-                "You do not have access to this resume."
+            raise ResourceNotFoundError(
+                "Resume not found."
             )
 
         return self.match_repository.get_by_resume_id(

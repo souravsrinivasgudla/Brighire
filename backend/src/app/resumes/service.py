@@ -3,17 +3,15 @@
 from pathlib import Path
 from uuid import UUID, uuid4
 
-from app.shared.exceptions import (
-    ResourceAccessDeniedError,
-    ResourceNotFoundError,
-)
-
 from fastapi import UploadFile
 
+from app.core.config import settings
 from app.resumes.extractor import extract_text_from_pdf
 from app.resumes.models import Resume
 from app.resumes.repository import ResumeRepository
-from app.core.config import settings
+from app.shared.exceptions import (
+    ResourceNotFoundError,
+)
 
 
 class ResumeService:
@@ -122,15 +120,11 @@ class ResumeService:
 
         resume = self.repository.get_by_id(resume_id)
 
-        if resume is None:
+        if resume is None or resume.user_id != user_id:
             raise ResourceNotFoundError(
                 "Resume not found."
             )
 
-        if resume.user_id != user_id:
-            raise ResourceAccessDeniedError(
-                "You do not have access to this resume."
-            )
 
         return resume
 

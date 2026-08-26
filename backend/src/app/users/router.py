@@ -1,8 +1,9 @@
 """User API endpoints."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 
+from app.core.rate_limit import rate_limit_by_ip
 from app.auth.dependencies import get_current_user
 from app.core.database import get_db
 from app.users.models import User
@@ -38,9 +39,16 @@ def get_user_service(
 )
 def create_user(
     data: UserCreate,
+    request: Request,
     service: UserService = Depends(get_user_service),
 ) -> UserResponse:
     """Create a user."""
+
+    rate_limit_by_ip(
+        request,
+        action="register",
+        limit=5,
+    )
 
     try:
         user = service.create_user(data)
