@@ -1,4 +1,4 @@
-# CareerForge AI
+# BrightHire AI
 
 An AI-powered Resume Analyzer and Job Matching Platform built with modern cloud-native technologies.
 
