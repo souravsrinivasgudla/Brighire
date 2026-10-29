@@ -21,7 +21,7 @@ export function JobMatching({ matches }: JobMatchingProps) {
 
       {matches.length === 0 ? (
         <p className="mt-6 cyber-body-muted">
-          Run a job match to populate opportunity capsules.
+          Run a job match against your primary resume to populate opportunity capsules.
         </p>
       ) : (
         <ul className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">

@@ -7,6 +7,7 @@ type CareerOverviewProps = {
   strongSkills: string[]
   improveSkills: string[]
   summary: string
+  primaryFilename?: string | null
 }
 
 export function CareerOverview({
@@ -14,6 +15,7 @@ export function CareerOverview({
   strongSkills,
   improveSkills,
   summary,
+  primaryFilename,
 }: CareerOverviewProps) {
   return (
     <section className="cyber-card p-5 sm:p-7">
@@ -21,7 +23,12 @@ export function CareerOverview({
         eyebrow="// career intelligence"
         tone="tertiary"
         title="Where You Stand"
-        action={<SectionLink to="/resumes">Improve score</SectionLink>}
+        description={
+          primaryFilename
+            ? `Driven by your primary resume: ${primaryFilename}`
+            : 'Set a primary resume so this dashboard tracks a single profile.'
+        }
+        action={<SectionLink to="/resumes">Manage resumes</SectionLink>}
         className="mb-6"
       />
 

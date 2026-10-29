@@ -10,10 +10,8 @@ export type ApplicationCardData = {
   title: string
   company: string
   status: ApplicationStatus
-  matchScore: number
-  interviewProbability: number
-  insight: string
-  nextAction: string
+  matchScore: number | null
+  insight: string | null
   createdAt: string
   jobId: string
   resumeId: string
@@ -72,23 +70,19 @@ export function ApplicationCard({
             <h3 className="cyber-h3 mt-3 text-base">{app.title}</h3>
             <p className="cyber-body-muted">{app.company}</p>
           </div>
-          <div className="text-right">
+          {app.matchScore != null ? (
             <span className="border border-cyber-accent/40 bg-cyber-accent/10 px-2.5 py-1 font-mono text-xs font-bold text-cyber-accent cyber-chamfer-sm">
               {app.matchScore}% match
             </span>
-            <p className="mt-2 font-mono text-[10px] text-cyber-muted-fg">
-              Interview prob. {app.interviewProbability}%
-            </p>
-          </div>
+          ) : null}
         </div>
 
-        <p className="mt-4 text-sm leading-relaxed text-cyber-fg">
-          <span className="font-semibold text-cyber-accent-secondary">AI Insight:</span>{' '}
-          {app.insight}
-        </p>
-        <p className="mt-2 text-sm text-cyber-accent">
-          <span className="font-semibold">Next Action:</span> {app.nextAction}
-        </p>
+        {app.insight ? (
+          <p className="mt-4 text-sm leading-relaxed text-cyber-fg">
+            <span className="font-semibold text-cyber-accent-secondary">AI Insight:</span>{' '}
+            {app.insight}
+          </p>
+        ) : null}
       </button>
 
       {selected ? (

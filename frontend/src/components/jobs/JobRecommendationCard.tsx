@@ -1,6 +1,6 @@
-import { Check, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
+import { formatJobSource } from '../../utils/format'
 import { MatchBadge } from '../ui/Badge'
 
 export type JobOpportunity = {
@@ -8,10 +8,10 @@ export type JobOpportunity = {
   title: string
   company: string
   location: string | null
-  matchScore: number
-  reasons: string[]
-  missing: string[]
+  matchScore: number | null
   summary: string
+  source: string | null
+  url: string | null
 }
 
 type JobRecommendationCardProps = {
@@ -52,39 +52,14 @@ export function JobRecommendationCard({
             {job.company}
             {job.location ? ` · ${job.location}` : ''}
           </p>
+          {job.source ? (
+            <p className="mt-1 font-label text-[10px] uppercase tracking-wider text-cyber-accent-secondary">
+              via {formatJobSource(job.source)}
+            </p>
+          ) : null}
         </div>
-        <MatchBadge score={job.matchScore} />
+        {job.matchScore != null ? <MatchBadge score={job.matchScore} /> : null}
       </div>
-
-      <p className="mt-3 cyber-label">Why AI Recommends</p>
-      <ul className="mt-2 space-y-1">
-        {job.reasons.slice(0, 3).map((reason) => (
-          <li
-            key={reason}
-            className="flex items-start gap-1.5 font-mono text-sm text-cyber-fg"
-          >
-            <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-cyber-accent" strokeWidth={1.5} />
-            {reason}
-          </li>
-        ))}
-      </ul>
-
-      {job.missing.length > 0 ? (
-        <div className="mt-3">
-          <p className="cyber-label text-cyber-accent-tertiary">Missing</p>
-          <ul className="mt-1.5 flex flex-wrap gap-1.5">
-            {job.missing.slice(0, 3).map((item) => (
-              <li
-                key={item}
-                className="inline-flex items-center gap-1 border border-cyber-accent-tertiary/30 bg-cyber-accent-tertiary/10 px-2 py-0.5 font-mono text-[11px] uppercase tracking-wider text-cyber-accent-tertiary"
-              >
-                <X className="h-3 w-3" strokeWidth={1.5} />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
 
       {selected ? (
         <p className="mt-3 line-clamp-3 font-mono text-xs leading-relaxed text-cyber-muted-fg">
@@ -101,6 +76,17 @@ export function JobRecommendationCard({
           Open intelligence
           <span aria-hidden="true">→</span>
         </Link>
+        {job.url ? (
+          <a
+            href={job.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="font-mono text-xs uppercase tracking-wider text-cyber-accent-secondary hover:text-cyber-accent cyber-focus"
+          >
+            View posting ↗
+          </a>
+        ) : null}
         {onRemove ? (
           <button
             type="button"

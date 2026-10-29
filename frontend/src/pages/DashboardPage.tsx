@@ -26,10 +26,13 @@ export function DashboardPage() {
         if (cancelled) return
         setDashboard(dash)
 
-        const first = resumes[0]
-        if (first) {
+        const primary =
+          resumes.find((resume) => resume.is_primary) ??
+          resumes.find((resume) => resume.id === dash.primary_resume_id) ??
+          resumes[0]
+        if (primary) {
           try {
-            const analysisData = await getResumeAnalysis(first.id)
+            const analysisData = await getResumeAnalysis(primary.id)
             if (!cancelled) setAnalysis(analysisData)
           } catch (err) {
             if (!(err instanceof ApiError && (err.status === 404 || err.status === 409))) {
@@ -79,6 +82,7 @@ export function DashboardPage() {
         strongSkills={strongSkills}
         improveSkills={improveSkills}
         summary={summary}
+        primaryFilename={dashboard?.primary_filename}
       />
 
       <ResumeIntelligence
@@ -89,14 +93,7 @@ export function DashboardPage() {
             : Math.round((dashboard?.average_match_score ?? 0) * 0.9)
         }
         impact={analysis?.overall_score ?? careerScore}
-        recommendations={
-          analysis?.suggestions?.length
-            ? analysis.suggestions
-            : [
-                'Add measurable achievements to your backend projects.',
-                'Surface cloud keywords recruiters and ATS systems expect.',
-              ]
-        }
+        recommendations={analysis?.suggestions ?? []}
       />
 
       <JobMatching matches={dashboard?.top_matches ?? []} />

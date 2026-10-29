@@ -1,21 +1,28 @@
-import { Download, FileText, RefreshCw, Share2 } from 'lucide-react'
+import { Download, FileText, RefreshCw, Share2, Star } from 'lucide-react'
 import { useRef } from 'react'
 
 import { formatDate } from '../../utils/format'
+import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 
 type ResumeToolbarProps = {
   filename: string
   text: string | null
   createdAt: string
+  isPrimary?: boolean
+  settingPrimary?: boolean
   onReplace: (file: File) => void
+  onSetPrimary?: () => void
 }
 
 export function ResumeToolbar({
   filename,
   text,
   createdAt,
+  isPrimary = false,
+  settingPrimary = false,
   onReplace,
+  onSetPrimary,
 }: ResumeToolbarProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const wordCount = text?.trim() ? text.trim().split(/\s+/).length : 0
@@ -31,14 +38,30 @@ export function ResumeToolbar({
             <p className="truncate font-mono text-sm font-semibold text-cyber-fg">
               {filename}
             </p>
-            <p className="mt-0.5 font-label text-[10px] uppercase tracking-[0.2em] text-cyber-muted-fg">
-              Uploaded {formatDate(createdAt)}
-              {wordCount > 0 ? ` · ${wordCount} words parsed` : ' · no text parsed'}
-            </p>
+            <div className="mt-0.5 flex flex-wrap items-center gap-2">
+              {isPrimary ? <Badge variant="accent">Primary</Badge> : null}
+              <p className="font-label text-[10px] uppercase tracking-[0.2em] text-cyber-muted-fg">
+                Uploaded {formatDate(createdAt)}
+                {wordCount > 0 ? ` · ${wordCount} words parsed` : ' · no text parsed'}
+              </p>
+            </div>
           </div>
         </div>
 
         <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {onSetPrimary && !isPrimary ? (
+            <Button
+              type="button"
+              variant="glitch"
+              size="sm"
+              loading={settingPrimary}
+              disabled={settingPrimary}
+              leftIcon={<Star className="h-3.5 w-3.5 cyber-icon" strokeWidth={1.5} />}
+              onClick={onSetPrimary}
+            >
+              Set as primary
+            </Button>
+          ) : null}
           <Button
             type="button"
             variant="outline"

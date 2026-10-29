@@ -6,6 +6,7 @@ from app.api.v1.health import router as health_router
 from app.applications.router import router as applications_router
 from app.auth.router import router as auth_router
 from app.dashboard.router import router as dashboard_router
+from app.job_portals.router import router as job_discovery_router
 from app.jobs.match_router import router as match_router
 from app.jobs.router import router as jobs_router
 from app.resumes.router import router as resumes_router
@@ -17,6 +18,7 @@ router.include_router(health_router)
 router.include_router(users_router)
 router.include_router(auth_router)
 router.include_router(resumes_router)
+router.include_router(job_discovery_router)
 router.include_router(jobs_router)
 router.include_router(match_router)
 router.include_router(dashboard_router)

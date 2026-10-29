@@ -4,9 +4,7 @@ import { ProtectedRoute } from '../auth/ProtectedRoute'
 import { DashboardLayout } from '../layouts/DashboardLayout'
 import { LandingLayout } from '../layouts/LandingLayout'
 import { PublicLayout } from '../layouts/PublicLayout'
-import { AICoachPage } from '../pages/AICoachPage'
 import { ApplicationsPage } from '../pages/ApplicationsPage'
-import { CareerDnaPage } from '../pages/CareerDnaPage'
 import { DashboardPage } from '../pages/DashboardPage'
 import { ForgotPasswordPage } from '../pages/ForgotPasswordPage'
 import { HomePage } from '../pages/HomePage'
@@ -19,7 +17,6 @@ import { RegisterPage } from '../pages/RegisterPage'
 import { ResetPasswordPage } from '../pages/ResetPasswordPage'
 import { ResumeDetailPage } from '../pages/ResumeDetailPage'
 import { ResumesPage } from '../pages/ResumesPage'
-import { RoadmapPage } from '../pages/RoadmapPage'
 
 export function AppRouter() {
   return (
@@ -44,10 +41,7 @@ export function AppRouter() {
             <Route path="jobs" element={<JobsPage />} />
             <Route path="jobs/:jobId" element={<JobDetailPage />} />
             <Route path="applications" element={<ApplicationsPage />} />
-            <Route path="ai-coach" element={<AICoachPage />} />
-            <Route path="career-dna" element={<CareerDnaPage />} />
             <Route path="pipeline" element={<PipelinePage />} />
-            <Route path="roadmap" element={<RoadmapPage />} />
             <Route path="profile" element={<ProfilePage />} />
           </Route>
         </Route>

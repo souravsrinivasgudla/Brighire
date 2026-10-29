@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "brighire-job-portals": {
+      "command": "uv",
+      "args": ["run", "--directory", "backend", "python", "-m", "app.job_portals.mcp_server"]
+    }
+  }
+}

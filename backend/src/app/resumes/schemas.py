@@ -14,6 +14,7 @@ class ResumeResponse(BaseModel):
     id: UUID
     user_id: UUID
     filename: str
+    is_primary: bool
     extracted_text: str | None
     created_at: datetime
     updated_at: datetime

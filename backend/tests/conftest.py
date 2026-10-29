@@ -10,6 +10,7 @@ from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, event
+from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -219,14 +220,25 @@ def create_resume(
     filename: str = "resume.pdf",
     extracted_text: str | None = "Python FastAPI engineer",
     storage_path: str = "storage/resumes/test.pdf",
+    is_primary: bool | None = None,
 ) -> Resume:
     """Insert a resume owned by the given user."""
+
+    if is_primary is None:
+        has_primary = db.scalar(
+            select(Resume.id).where(
+                Resume.user_id == user.id,
+                Resume.is_primary.is_(True),
+            )
+        )
+        is_primary = has_primary is None
 
     resume = Resume(
         user_id=user.id,
         filename=filename,
         storage_path=storage_path,
         extracted_text=extracted_text,
+        is_primary=is_primary,
     )
     db.add(resume)
     db.commit()

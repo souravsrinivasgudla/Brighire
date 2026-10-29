@@ -47,6 +47,7 @@ export type Resume = {
   id: string
   user_id: string
   filename: string
+  is_primary: boolean
   extracted_text: string | null
   created_at: string
   updated_at: string
@@ -74,8 +75,33 @@ export type Job = {
   location: string | null
   description: string
   requirements: string | null
+  source: string | null
+  url: string | null
   created_at: string
   updated_at: string
+}
+
+export type JobDiscoveryPayload = {
+  resume_id?: string
+  query?: string
+  location?: string
+  country?: string
+  limit?: number
+}
+
+export type DiscoveredJob = {
+  job: Job
+  match_score: number | null
+}
+
+export type JobDiscoveryResponse = {
+  resume_id: string
+  queries: string[]
+  location: string | null
+  imported: DiscoveredJob[]
+  skipped_duplicates: number
+  source_errors: string[]
+  discovered_at: string
 }
 
 export type JobCreatePayload = {
@@ -162,6 +188,8 @@ export type Dashboard = {
   analysis_count: number
   match_count: number
   average_match_score: number | null
+  primary_resume_id: string | null
+  primary_filename: string | null
   top_matches: DashboardMatch[]
 }
 

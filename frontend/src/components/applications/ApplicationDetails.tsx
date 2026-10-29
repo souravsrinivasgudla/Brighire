@@ -24,20 +24,11 @@ export function ApplicationDetails({ app }: ApplicationDetailsProps) {
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Meta label="Status" value={app.status} />
-        <Meta label="Match" value={`${app.matchScore}%`} />
-        <Meta label="Interview probability" value={`${app.interviewProbability}%`} />
+        <Meta label="Match" value={app.matchScore != null ? `${app.matchScore}%` : '—'} />
         <Meta label="Resume" value={app.resumeName} />
       </div>
 
       <TimelineView status={app.status} />
-
-      <div className="border border-cyber-accent/30 bg-cyber-accent/10 px-3 py-3 text-sm leading-relaxed text-cyber-fg cyber-chamfer-sm">
-        <p className="cyber-label text-cyber-accent">AI Recommendation</p>
-        <p className="mt-1">
-          You should emphasize cloud deployment experience during interviews and
-          prep system design stories tied to this role.
-        </p>
-      </div>
     </aside>
   )
 }

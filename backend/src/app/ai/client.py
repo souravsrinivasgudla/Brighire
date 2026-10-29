@@ -131,6 +131,32 @@ class GroqAIClient:
 
         return self._create_json_completion(messages=messages)
 
+    def suggest_job_searches(self, resume_text: str) -> dict:
+        """Derive job portal search queries from a resume."""
+
+        messages: list[ChatCompletionMessageParam] = [
+            {
+                "role": "system",
+                "content": (
+                    "You are an expert technical recruiter. From the resume, "
+                    "decide which job titles the candidate should search for on "
+                    "job portals right now, at their real seniority level. "
+                    "Use only information present in the resume. "
+                    "Return a valid JSON object with exactly these fields: "
+                    "queries (an array of 1 to 3 short job-title search strings, "
+                    "most relevant first, e.g. \"Senior Python Backend Engineer\") "
+                    "and location (the candidate's current city as a string, or "
+                    "null if the resume does not state one)."
+                ),
+            },
+            {
+                "role": "user",
+                "content": f"RESUME:\n{resume_text}",
+            },
+        ]
+
+        return self._create_json_completion(messages=messages)
+
     def _create_json_completion(
         self,
         *,

@@ -1,9 +1,7 @@
-import { AIResumeChat } from './AIResumeChat'
 import { AIScanner } from './AIScanner'
 import { ATSScore } from './ATSScore'
 import { CareerDNAPanel } from './CareerDNA'
 import { RecommendationPanel } from './RecommendationPanel'
-import { ResumeComparison } from './ResumeComparison'
 import { ResumeToolbar } from './ResumeToolbar'
 import { SkillGapMap } from './SkillGapMap'
 import { VersionHistory } from './VersionHistory'
@@ -17,6 +15,8 @@ type ResumeWorkspaceProps = {
   versionScores: Record<string, number | undefined>
   onAnalyze: () => void
   onReplace: (file: File) => void
+  onSetPrimary?: () => void
+  settingPrimary?: boolean
 }
 
 function inferRole(analysis: ResumeAnalysis | null, text: string | null) {
@@ -47,19 +47,14 @@ export function ResumeWorkspace({
   versionScores,
   onAnalyze,
   onReplace,
+  onSetPrimary,
+  settingPrimary = false,
 }: ResumeWorkspaceProps) {
   const complete = !!analysis
   const score = analysis?.overall_score ?? 0
   const ats = complete ? Math.min(99, score + 3) : 0
   const skill = complete ? Math.min(99, Math.round(score * 0.94)) : 0
   const impact = complete ? score : 0
-
-  const before =
-    'Worked on APIs and helped maintain backend services for the product team.'
-  const after =
-    analysis?.suggestions?.[0] != null
-      ? 'Designed scalable REST APIs handling enterprise workloads with measurable reliability gains.'
-      : 'Designed scalable REST APIs handling enterprise workloads with measurable reliability gains.'
 
   return (
     <div className="space-y-6">
@@ -74,7 +69,10 @@ export function ResumeWorkspace({
         filename={resume.filename}
         text={resume.extracted_text}
         createdAt={resume.created_at}
+        isPrimary={resume.is_primary}
+        settingPrimary={settingPrimary}
         onReplace={onReplace}
+        onSetPrimary={onSetPrimary}
       />
 
       <div className="grid items-start gap-5 xl:grid-cols-2">
@@ -113,20 +111,17 @@ export function ResumeWorkspace({
       </div>
 
       {complete ? (
-        <>
-          <ResumeComparison before={before} after={after} />
-          <div className="grid gap-5 lg:grid-cols-2">
-            <SkillGapMap
-              current={analysis?.skills ?? []}
-              missing={analysis?.missing_skills ?? []}
-            />
-            <VersionHistory
-              resumes={versions}
-              activeId={resume.id}
-              scores={versionScores}
-            />
-          </div>
-        </>
+        <div className="grid gap-5 lg:grid-cols-2">
+          <SkillGapMap
+            current={analysis?.skills ?? []}
+            missing={analysis?.missing_skills ?? []}
+          />
+          <VersionHistory
+            resumes={versions}
+            activeId={resume.id}
+            scores={versionScores}
+          />
+        </div>
       ) : (
         <VersionHistory
           resumes={versions}
@@ -134,8 +129,6 @@ export function ResumeWorkspace({
           scores={versionScores}
         />
       )}
-
-      <AIResumeChat />
     </div>
   )
 }

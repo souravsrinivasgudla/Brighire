@@ -23,6 +23,11 @@ export async function deleteResume(resumeId: string): Promise<void> {
   await apiClient.delete(`/resumes/${resumeId}`)
 }
 
+export async function setPrimaryResume(resumeId: string): Promise<Resume> {
+  const { data } = await apiClient.post<Resume>(`/resumes/${resumeId}/primary`)
+  return data
+}
+
 export async function analyzeResume(
   resumeId: string,
 ): Promise<ResumeAnalysis> {

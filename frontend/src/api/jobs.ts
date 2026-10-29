@@ -2,6 +2,8 @@ import { apiClient } from './client'
 import type {
   Job,
   JobCreatePayload,
+  JobDiscoveryPayload,
+  JobDiscoveryResponse,
   JobListParams,
   JobListResponse,
   JobUpdatePayload,
@@ -35,6 +37,18 @@ export async function updateJob(
 
 export async function deleteJob(jobId: string): Promise<void> {
   await apiClient.delete(`/jobs/${jobId}`)
+}
+
+export async function discoverJobs(
+  payload: JobDiscoveryPayload = {},
+): Promise<JobDiscoveryResponse> {
+  // Portal search plus AI scoring can take a while.
+  const { data } = await apiClient.post<JobDiscoveryResponse>(
+    '/jobs/discover',
+    payload,
+    { timeout: 180_000 },
+  )
+  return data
 }
 
 export async function createJobMatch(

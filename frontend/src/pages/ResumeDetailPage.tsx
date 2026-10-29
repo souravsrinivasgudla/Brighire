@@ -6,6 +6,7 @@ import {
   getResume,
   getResumeAnalysis,
   listResumes,
+  setPrimaryResume,
   uploadResume,
 } from '../api/resumes'
 import { ResumeWorkspace } from '../components/resume/ResumeWorkspace'
@@ -24,6 +25,7 @@ export function ResumeDetailPage() {
   >({})
   const [loading, setLoading] = useState(true)
   const [analyzing, setAnalyzing] = useState(false)
+  const [settingPrimary, setSettingPrimary] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
@@ -80,6 +82,25 @@ export function ResumeDetailPage() {
     }
   }
 
+  async function onSetPrimary() {
+    setSettingPrimary(true)
+    setError(null)
+    try {
+      const updated = await setPrimaryResume(resumeId)
+      setResume(updated)
+      setVersions((current) =>
+        current.map((item) => ({
+          ...item,
+          is_primary: item.id === updated.id,
+        })),
+      )
+    } catch (err) {
+      setError(getErrorMessage(err))
+    } finally {
+      setSettingPrimary(false)
+    }
+  }
+
   async function onReplace(file: File) {
     setError(null)
     try {
@@ -119,6 +140,8 @@ export function ResumeDetailPage() {
         versionScores={versionScores}
         onAnalyze={() => void onAnalyze()}
         onReplace={(file) => void onReplace(file)}
+        onSetPrimary={() => void onSetPrimary()}
+        settingPrimary={settingPrimary}
       />
     </div>
   )

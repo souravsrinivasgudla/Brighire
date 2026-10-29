@@ -226,6 +226,34 @@ def delete_resume(
         ) from exc
 
 
+@router.post(
+    "/{resume_id}/primary",
+    response_model=ResumeResponse,
+)
+def set_primary_resume(
+    resume_id: UUID,
+    current_user: User = Depends(get_current_user),
+    service: ResumeService = Depends(
+        get_resume_service,
+    ),
+) -> ResumeResponse:
+    """Set a resume as the user's primary dashboard resume."""
+
+    try:
+        resume = service.set_primary(
+            resume_id=resume_id,
+            user_id=current_user.id,
+        )
+
+        return ResumeResponse.model_validate(resume)
+
+    except ResourceNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+
 # ---------------------------------------------------------------------------
 # Analyze resume
 # ---------------------------------------------------------------------------

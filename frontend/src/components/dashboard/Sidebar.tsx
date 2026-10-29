@@ -1,25 +1,12 @@
-import {
-  Briefcase,
-  Dna,
-  FileSearch,
-  GitBranch,
-  GraduationCap,
-  Home,
-  MessageSquare,
-  Route,
-  User,
-} from 'lucide-react'
+import { Briefcase, FileSearch, GitBranch, Home, Route, User } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
 const items = [
   { to: '/dashboard', label: 'Dashboard', icon: Home, end: true },
-  { to: '/ai-coach', label: 'BrightHire AI', icon: MessageSquare },
   { to: '/resumes', label: 'Resume Intel', icon: FileSearch },
   { to: '/jobs', label: 'Job Matches', icon: Briefcase },
   { to: '/applications', label: 'Applications', icon: Route },
   { to: '/pipeline', label: 'Pipeline', icon: GitBranch },
-  { to: '/career-dna', label: 'Career DNA', icon: Dna },
-  { to: '/roadmap', label: 'Roadmap', icon: GraduationCap },
 ]
 
 const mobileItems = [

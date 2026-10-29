@@ -1,4 +1,3 @@
-import { Bell, MessageSquare } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { useAuth } from '../../hooks/useAuth'
@@ -35,22 +34,6 @@ export function DashboardHeader() {
 
       <div className="flex items-center gap-3">
         <AIStatus state="online" className="hidden sm:inline-flex" />
-
-        <Link
-          to="/ai-coach"
-          className="inline-flex h-11 w-11 items-center justify-center border border-cyber-border bg-cyber-muted text-cyber-muted-fg transition hover:border-cyber-accent hover:text-cyber-accent cyber-chamfer-sm cyber-focus"
-          aria-label="Open BrightHire AI"
-        >
-          <MessageSquare className="h-4 w-4 cyber-icon" strokeWidth={1.5} />
-        </Link>
-
-        <button
-          type="button"
-          className="inline-flex h-11 w-11 items-center justify-center border border-cyber-border bg-cyber-muted text-cyber-muted-fg transition hover:border-cyber-accent hover:text-cyber-accent cyber-chamfer-sm cyber-focus"
-          aria-label="Notifications"
-        >
-          <Bell className="h-4 w-4 cyber-icon" strokeWidth={1.5} />
-        </button>
 
         <Link
           to="/profile"

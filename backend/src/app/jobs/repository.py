@@ -84,6 +84,55 @@ class JobRepository:
         self.db.delete(job)
         self.db.commit()
 
+    def create_many_imported(
+        self,
+        *,
+        user_id: UUID,
+        jobs: list[dict],
+    ) -> list[Job]:
+        """Insert jobs imported from a portal in one transaction."""
+
+        created = [
+            Job(user_id=user_id, **data)
+            for data in jobs
+        ]
+
+        self.db.add_all(created)
+        self.db.commit()
+
+        for job in created:
+            self.db.refresh(job)
+
+        return created
+
+    def get_import_keys(
+        self,
+        *,
+        user_id: UUID,
+    ) -> tuple[set[tuple[str, str]], set[tuple[str, str]]]:
+        """Return existing (source, external_id) and (title, company) keys."""
+
+        rows = self.db.execute(
+            select(
+                Job.source,
+                Job.external_id,
+                Job.title,
+                Job.company,
+            ).where(Job.user_id == user_id)
+        ).all()
+
+        external_keys = {
+            (row.source, row.external_id)
+            for row in rows
+            if row.source and row.external_id
+        }
+        title_keys = {
+            (row.title.strip().lower(), row.company.strip().lower())
+            for row in rows
+        }
+
+        return external_keys, title_keys
+
     def get_by_id(
         self,
         job_id: UUID,

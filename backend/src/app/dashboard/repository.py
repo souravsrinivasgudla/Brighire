@@ -32,6 +32,29 @@ class DashboardRepository:
 
         return self.db.scalar(statement) or 0
 
+    def get_primary_resume(
+        self,
+        *,
+        user_id: UUID,
+    ) -> Resume | None:
+        """Get the user's primary resume, falling back to the latest."""
+
+        primary = self.db.scalar(
+            select(Resume).where(
+                Resume.user_id == user_id,
+                Resume.is_primary.is_(True),
+            )
+        )
+
+        if primary is not None:
+            return primary
+
+        return self.db.scalar(
+            select(Resume)
+            .where(Resume.user_id == user_id)
+            .order_by(Resume.created_at.desc())
+        )
+
     def get_analysis_count(
         self,
         *,

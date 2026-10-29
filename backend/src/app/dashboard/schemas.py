@@ -30,6 +30,8 @@ class DashboardResponse(BaseModel):
     analysis_count: int
     match_count: int
     average_match_score: int | None
+    primary_resume_id: UUID | None
+    primary_filename: str | None
     top_matches: list[DashboardMatch]
 
 

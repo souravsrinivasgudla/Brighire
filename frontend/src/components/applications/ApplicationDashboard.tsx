@@ -18,14 +18,12 @@ import type {
 } from '../../types/api'
 import { getErrorMessage } from '../../utils/errors'
 import { Button } from '../ui/Button'
-import { AICareerAssistant } from './AICareerAssistant'
 import {
   ApplicationCard,
   type ApplicationCardData,
 } from './ApplicationCard'
 import { ApplicationDetails } from './ApplicationDetails'
 import { CareerPipeline } from './CareerPipeline'
-import { InterviewCoach } from './InterviewCoach'
 
 function buildCard(
   app: Application,
@@ -33,34 +31,13 @@ function buildCard(
   resume: Resume | undefined,
   match: DashboardMatch | undefined,
 ): ApplicationCardData {
-  const matchScore = match?.match_score ?? 78 + (app.status === 'interview' ? 8 : 0)
-  const interviewProbability =
-    app.status === 'interview'
-      ? 86
-      : app.status === 'offer'
-        ? 94
-        : Math.min(88, 55 + Math.round(matchScore / 3))
-
-  const nextAction =
-    app.status === 'interview'
-      ? 'Prepare system design questions.'
-      : app.status === 'offer'
-        ? 'Review compensation and negotiate timeline.'
-        : app.status === 'reviewing'
-          ? 'Send a concise follow-up in 3 days.'
-          : 'Strengthen resume keywords for this role.'
-
   return {
     id: app.id,
     title: job?.title ?? 'Role',
     company: job?.company ?? 'Company',
     status: app.status,
-    matchScore: Math.round(matchScore),
-    interviewProbability,
-    insight:
-      match?.summary?.slice(0, 120) ||
-      'Your FastAPI experience aligns strongly with this role.',
-    nextAction,
+    matchScore: match ? Math.round(match.match_score) : null,
+    insight: match?.summary?.slice(0, 120) || null,
     createdAt: app.created_at,
     jobId: app.job_id,
     resumeId: app.resume_id,
@@ -313,9 +290,6 @@ export function ApplicationDashboard() {
           <ApplicationDetails app={selected} />
         </div>
       )}
-
-      <InterviewCoach />
-      <AICareerAssistant />
     </div>
   )
 }

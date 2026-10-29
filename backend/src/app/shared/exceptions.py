@@ -23,3 +23,7 @@ class AIProviderUnavailableError(AppError):
 
 class AIProviderRequestError(AppError):
     """Raised when the AI provider returns an invalid or failed response."""
+
+
+class JobPortalUnavailableError(AppError):
+    """Raised when the job portal MCP server cannot be reached."""

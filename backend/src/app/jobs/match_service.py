@@ -9,6 +9,7 @@ from app.ai.client import GroqAIClient
 from app.ai.match_schemas import ResumeJobMatchAIResponse
 from app.jobs.match_models import ResumeJobMatch
 from app.jobs.match_repository import ResumeJobMatchRepository
+from app.jobs.models import Job
 from app.jobs.repository import JobRepository
 from app.resumes.repository import ResumeRepository
 from app.shared.exceptions import (
@@ -82,34 +83,16 @@ class ResumeJobMatchService:
         if existing_match is not None:
             return existing_match, False
 
-        ai_result = self.ai_client.analyze_resume_job_match(
+        analysis = self.analyze(
             resume_text=resume.extracted_text,
-            job_title=job.title,
-            company=job.company,
-            job_description=job.description,
-            requirements=job.requirements,
+            job=job,
         )
 
         try:
-            analysis = ResumeJobMatchAIResponse.model_validate(
-                ai_result
-            )
-        except ValidationError as exc:
-            raise AIProviderRequestError(
-                "AI service failed to process the request."
-            ) from exc
-
-        try:
-            match = self.match_repository.create(
+            match = self.save_analysis(
                 resume_id=resume_id,
                 job_id=job_id,
-                match_score=analysis.match_score,
-                summary=analysis.summary,
-                matched_skills=analysis.matched_skills,
-                missing_skills=analysis.missing_skills,
-                strengths=analysis.strengths,
-                gaps=analysis.gaps,
-                recommendations=analysis.recommendations,
+                analysis=analysis,
             )
         except IntegrityError:
             self.match_repository.db.rollback()
@@ -118,6 +101,52 @@ class ResumeJobMatchService:
             ) from None
 
         return match, True
+
+    def analyze(
+        self,
+        *,
+        resume_text: str,
+        job: Job,
+    ) -> ResumeJobMatchAIResponse:
+        """Score a resume against a job with the AI. Does not touch the DB."""
+
+        ai_result = self.ai_client.analyze_resume_job_match(
+            resume_text=resume_text,
+            job_title=job.title,
+            company=job.company,
+            job_description=job.description,
+            requirements=job.requirements,
+        )
+
+        try:
+            return ResumeJobMatchAIResponse.model_validate(
+                ai_result
+            )
+        except ValidationError as exc:
+            raise AIProviderRequestError(
+                "AI service failed to process the request."
+            ) from exc
+
+    def save_analysis(
+        self,
+        *,
+        resume_id: UUID,
+        job_id: UUID,
+        analysis: ResumeJobMatchAIResponse,
+    ) -> ResumeJobMatch:
+        """Persist an AI match analysis."""
+
+        return self.match_repository.create(
+            resume_id=resume_id,
+            job_id=job_id,
+            match_score=analysis.match_score,
+            summary=analysis.summary,
+            matched_skills=analysis.matched_skills,
+            missing_skills=analysis.missing_skills,
+            strengths=analysis.strengths,
+            gaps=analysis.gaps,
+            recommendations=analysis.recommendations,
+        )
 
     def get_match(
         self,

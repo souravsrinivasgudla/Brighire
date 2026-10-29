@@ -1,75 +1,46 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { listApplications } from '../api/applications'
-import { getDashboard } from '../api/dashboard'
 import { deleteJob, listJobs } from '../api/jobs'
-import { listResumes } from '../api/resumes'
-import { AICareerAgent } from '../components/jobs/AICareerAgent'
+import { getResumeMatches, listResumes } from '../api/resumes'
 import { AIMatchingHeader } from '../components/jobs/AIMatchingHeader'
 import { ApplicationPipeline } from '../components/jobs/ApplicationPipeline'
-import { CareerForecast } from '../components/jobs/CareerForecast'
-import { CareerScore } from '../components/jobs/CareerScore'
 import {
   JobRecommendationCard,
   type JobOpportunity,
 } from '../components/jobs/JobRecommendationCard'
 import { JobInsightPanel } from '../components/jobs/JobInsightPanel'
 import { JobSearchAI } from '../components/jobs/JobSearchAI'
-import { SkillMatchGraph } from '../components/jobs/SkillMatchGraph'
+import { ProfileJobDiscovery } from '../components/jobs/ProfileJobDiscovery'
 import { ErrorBanner, LoadingState } from '../components/ui'
 import type {
   Application,
-  Dashboard,
-  DashboardMatch,
   Job,
   Resume,
+  ResumeJobMatch,
 } from '../types/api'
 import { getErrorMessage } from '../utils/errors'
 
-const DEFAULT_REASONS = [
-  'Profile skills align with role keywords',
-  'Experience signal matches seniority cues',
-  'Cloud / backend strengths detected',
-]
-
-const DEFAULT_MISSING = ['Kubernetes', 'Terraform', 'CI/CD']
-
 function toOpportunity(
   job: Job,
-  match?: DashboardMatch,
+  match?: ResumeJobMatch,
 ): JobOpportunity {
-  const score =
-    match?.match_score ??
-    Math.min(
-      94,
-      62 +
-        (job.title.toLowerCase().includes('cloud') ? 12 : 0) +
-        (job.title.toLowerCase().includes('devops') ? 10 : 0) +
-        (job.description.length > 200 ? 6 : 0),
-    )
-
   return {
     id: job.id,
     title: job.title,
     company: job.company,
     location: job.location,
-    matchScore: Math.round(score),
-    reasons: match
-      ? [
-          `${match.company} role aligns with your profile`,
-          match.summary.slice(0, 80) || DEFAULT_REASONS[0],
-          DEFAULT_REASONS[2],
-        ]
-      : DEFAULT_REASONS,
-    missing: DEFAULT_MISSING.slice(0, score > 90 ? 1 : 3),
+    matchScore: match ? Math.round(match.match_score) : null,
     summary: match?.summary || job.description,
+    source: job.source,
+    url: job.url,
   }
 }
 
 export function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([])
   const [total, setTotal] = useState(0)
-  const [dashboard, setDashboard] = useState<Dashboard | null>(null)
+  const [matches, setMatches] = useState<ResumeJobMatch[]>([])
   const [applications, setApplications] = useState<Application[]>([])
   const [resumes, setResumes] = useState<Resume[]>([])
   const [query, setQuery] = useState('')
@@ -82,19 +53,19 @@ export function JobsPage() {
     setLoading(true)
     setError(null)
     try {
-      const [jobData, dash, apps, resumeData] = await Promise.all([
+      const [jobData, apps, resumeData] = await Promise.all([
         listJobs({
           search: search.trim() || undefined,
-          page_size: 50,
+          page_size: 100,
           sort_by: 'created_at',
         }),
-        getDashboard(),
         listApplications(),
         listResumes(),
       ])
+      const primary = resumeData.find((r) => r.is_primary) ?? resumeData[0]
+      setMatches(primary ? await getResumeMatches(primary.id) : [])
       setJobs(jobData.items)
       setTotal(jobData.total)
-      setDashboard(dash)
       setApplications(apps)
       setResumes(resumeData)
       setSelectedId((current) => current ?? jobData.items[0]?.id ?? null)
@@ -111,12 +82,11 @@ export function JobsPage() {
   }, [])
 
   const matchByJobId = useMemo(() => {
-    const map = new Map<string, DashboardMatch>()
-    for (const m of dashboard?.top_matches ?? []) {
-      map.set(m.job_id, m)
-    }
-    return map
-  }, [dashboard])
+    return new Map(matches.map((m) => [m.job_id, m]))
+  }, [matches])
+
+  const primaryResumeId =
+    (resumes.find((r) => r.is_primary) ?? resumes[0])?.id ?? null
 
   const opportunities = useMemo(() => {
     let list = jobs.map((job) => toOpportunity(job, matchByJobId.get(job.id)))
@@ -137,20 +107,11 @@ export function JobsPage() {
       )
     }
 
-    return list.sort((a, b) => b.matchScore - a.matchScore)
+    return list.sort((a, b) => (b.matchScore ?? -1) - (a.matchScore ?? -1))
   }, [jobs, matchByJobId, filters])
 
   const selected =
     opportunities.find((o) => o.id === selectedId) ?? opportunities[0] ?? null
-
-  const careerScore = Math.round(
-    dashboard?.average_match_score ??
-      (opportunities[0]?.matchScore ?? 0),
-  )
-
-  const roles = Array.from(
-    new Set(opportunities.slice(0, 5).map((o) => o.title)),
-  ).slice(0, 3)
 
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = { saved: jobs.length }
@@ -159,13 +120,6 @@ export function JobsPage() {
     }
     return counts
   }, [applications, jobs.length])
-
-  const highMatchCount = opportunities.filter((o) => o.matchScore >= 85).length
-
-  const yourSkills = ['Python', 'FastAPI', 'AWS', 'Docker']
-  const requiredSkills = selected
-    ? ['Python', 'AWS', 'Docker', 'Kubernetes', ...(selected.missing.slice(0, 1))]
-    : ['Python', 'AWS', 'Docker', 'Kubernetes']
 
   async function onDelete(jobId: string) {
     if (!window.confirm('Remove this opportunity from your engine?')) return
@@ -180,20 +134,9 @@ export function JobsPage() {
 
   return (
     <div className="space-y-5 text-cyber-fg">
-      <AIMatchingHeader opportunityCount={Math.max(total * 120 + 840, 12540)} />
+      <AIMatchingHeader opportunityCount={total} />
 
       {error ? <ErrorBanner message={error} /> : null}
-
-      <CareerScore
-        score={careerScore || 72}
-        roles={
-          roles.length
-            ? roles
-            : ['Cloud Engineer', 'Backend Engineer', 'DevOps Engineer']
-        }
-        strengths={['Python', 'AWS', 'API Development']}
-        growth={['Kubernetes', 'Terraform', 'CI/CD']}
-      />
 
       <JobSearchAI
         query={query}
@@ -209,11 +152,13 @@ export function JobsPage() {
         }
       />
 
-      {resumes.length === 0 ? (
-        <p className="cyber-label text-cyber-muted-fg">
-          Upload a resume to sharpen match intelligence.
-        </p>
-      ) : null}
+      <ProfileJobDiscovery
+        resumeId={primaryResumeId}
+        onDiscovered={(result) => {
+          setSelectedId(result.imported[0]?.job.id ?? null)
+          void refresh(query)
+        }}
+      />
 
       {loading ? (
         <LoadingState label="AI recruiter is scanning opportunities…" />
@@ -229,7 +174,8 @@ export function JobsPage() {
             {opportunities.length === 0 ? (
               <div className="cyber-card p-8 text-center">
                 <p className="cyber-body-muted">
-                  No opportunities available yet. Check back as new roles are added.
+                  No opportunities yet. Use “Find jobs for my profile” to pull
+                  live listings from job portals.
                 </p>
               </div>
             ) : (
@@ -250,17 +196,10 @@ export function JobsPage() {
 
           <div className="space-y-5">
             <JobInsightPanel job={selected} />
-            <SkillMatchGraph yours={yourSkills} required={requiredSkills} />
+            <ApplicationPipeline counts={statusCounts} />
           </div>
         </div>
       )}
-
-      <div className="grid gap-5 lg:grid-cols-2">
-        <ApplicationPipeline counts={statusCounts} />
-        <CareerForecast />
-      </div>
-
-      <AICareerAgent highMatchCount={highMatchCount || 23} />
     </div>
   )
 }

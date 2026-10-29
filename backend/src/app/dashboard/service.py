@@ -33,17 +33,32 @@ class DashboardService:
             user_id=user_id,
         )
 
-        analysis_count = self.repository.get_analysis_count(
+        primary = self.repository.get_primary_resume(
             user_id=user_id,
         )
 
-        match_count = self.repository.get_match_count(
-            user_id=user_id,
+        if primary is None:
+            return DashboardResponse(
+                resume_count=resume_count,
+                analysis_count=0,
+                match_count=0,
+                average_match_score=None,
+                primary_resume_id=None,
+                primary_filename=None,
+                top_matches=[],
+            )
+
+        analysis = self.repository.get_resume_analysis(
+            resume_id=primary.id,
+        )
+
+        match_count = self.repository.get_resume_match_count(
+            resume_id=primary.id,
         )
 
         average_match_score = (
-            self.repository.get_average_match_score(
-                user_id=user_id,
+            self.repository.get_resume_average_match_score(
+                resume_id=primary.id,
             )
         )
 
@@ -58,17 +73,19 @@ class DashboardService:
                 match_score=match.match_score,
                 summary=match.summary,
             )
-            for match, job in self.repository.get_top_matches(
-                user_id=user_id,
+            for match, job in self.repository.get_resume_top_matches(
+                resume_id=primary.id,
                 limit=5,
             )
         ]
 
         return DashboardResponse(
             resume_count=resume_count,
-            analysis_count=analysis_count,
+            analysis_count=1 if analysis is not None else 0,
             match_count=match_count,
             average_match_score=average_match_score,
+            primary_resume_id=primary.id,
+            primary_filename=primary.filename,
             top_matches=top_matches,
         )
 

@@ -2,13 +2,7 @@ import { Search, Sparkles } from 'lucide-react'
 
 import { Button } from '../ui/Button'
 
-const FILTERS = [
-  'Remote',
-  'Hybrid',
-  'Full Time',
-  'Startup',
-  'Enterprise',
-] as const
+const FILTERS = ['Remote', 'Startup', 'Enterprise'] as const
 
 type JobSearchAIProps = {
   query: string

@@ -71,6 +71,8 @@ class JobResponse(BaseModel):
     location: str | None
     description: str
     requirements: str | None
+    source: str | None = None
+    url: str | None = None
     created_at: datetime
     updated_at: datetime
 

@@ -87,11 +87,16 @@ class ResumeService:
                 file_path
             )
 
+            existing = self.repository.get_by_user_id(
+                user_id=user_id,
+            )
+
             return self.repository.create(
                 user_id=user_id,
                 filename=original_filename,
                 storage_path=str(file_path),
                 extracted_text=extracted_text,
+                is_primary=len(existing) == 0,
             )
 
         except Exception:
@@ -142,6 +147,8 @@ class ResumeService:
         )
 
         storage_path = Path(resume.storage_path)
+        was_primary = resume.is_primary
+        owner_id = resume.user_id
 
         self.repository.delete(
             resume=resume,
@@ -149,3 +156,28 @@ class ResumeService:
 
         if storage_path.exists():
             storage_path.unlink()
+
+        if was_primary:
+            remaining = self.repository.get_by_user_id(
+                user_id=owner_id,
+            )
+            if remaining:
+                self.repository.set_as_primary(resume=remaining[0])
+
+    def set_primary(
+        self,
+        *,
+        resume_id: UUID,
+        user_id: UUID,
+    ) -> Resume:
+        """Mark a resume as the user's primary dashboard resume."""
+
+        resume = self.get_resume(
+            resume_id=resume_id,
+            user_id=user_id,
+        )
+
+        if resume.is_primary:
+            return resume
+
+        return self.repository.set_as_primary(resume=resume)

@@ -21,3 +21,20 @@ export const APPLICATION_STATUSES = [
   'rejected',
   'withdrawn',
 ] as const
+
+const JOB_SOURCE_NAMES: Record<string, string> = {
+  adzuna: 'Adzuna',
+  jsearch: 'JSearch',
+  google_jobs: 'Google Jobs',
+  jooble: 'Jooble',
+  greenhouse: 'company careers (Greenhouse)',
+  lever: 'company careers (Lever)',
+  ashby: 'company careers (Ashby)',
+  himalayas: 'Himalayas',
+  remoteok: 'Remote OK',
+}
+
+export function formatJobSource(source: string): string {
+  if (source.startsWith('jobspy-')) return source.slice('jobspy-'.length)
+  return JOB_SOURCE_NAMES[source] ?? source
+}
